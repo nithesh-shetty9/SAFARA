@@ -1,0 +1,145 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>SAFARA — About</title>
+  <link rel="stylesheet" href="../css/base.css"/>
+  <link rel="stylesheet" href="../css/pages.css"/>
+</head>
+<body>
+
+<div class="app-shell">
+  <header class="header" id="app-header"></header>
+  <div class="app-body">
+    <nav class="sidebar" id="sidebar"></nav>
+    <main class="main">
+      <div class="content-panel">
+
+        <div>
+          <h2 class="panel-title">About SAFARA</h2>
+          <p class="panel-sub">Safety-aware navigation. Community-powered. AI-driven.</p>
+        </div>
+
+        <div class="about-grid-2">
+          <div class="about-feature-card">
+            <div class="about-feature-icon">🛡</div>
+            <div class="about-feature-title">Safety First</div>
+            <p class="about-feature-desc">SAFARA prioritises safety over speed. Dangerous zones are invisible to users — the system routes around them quietly.</p>
+          </div>
+          <div class="about-feature-card">
+            <div class="about-feature-icon">🤖</div>
+            <div class="about-feature-title">Claude AI / NLP</div>
+            <p class="about-feature-desc">Incident reports are classified by Claude (claude-sonnet-4-20250514) using NLP. Severity, harassment signals, and route advice are extracted in real time.</p>
+          </div>
+          <div class="about-feature-card">
+            <div class="about-feature-icon">👥</div>
+            <div class="about-feature-title">Community Driven</div>
+            <p class="about-feature-desc">Every report makes routes safer for the next commuter. Credibility scores prevent abuse and manipulation.</p>
+          </div>
+          <div class="about-feature-card">
+            <div class="about-feature-icon">🔒</div>
+            <div class="about-feature-title">Privacy by Design</div>
+            <p class="about-feature-desc">Reports are fully anonymous. No personal data is stored against your account. Aggregated signals only.</p>
+          </div>
+        </div>
+
+        <div class="card">
+          <div class="card-header"><span class="card-title">How It Works</span></div>
+          <div class="step-list">
+            <div class="step-item">
+              <div class="step-num">1</div>
+              <div><div class="step-title">User enters a route</div><div class="step-desc">Start and destination are submitted to the SAFARA routing engine.</div></div>
+            </div>
+            <div class="step-item">
+              <div class="step-num">2</div>
+              <div><div class="step-title">Safety data analysed</div><div class="step-desc">Community incident reports are processed. Confirmed unsafe zones are factored into path selection.</div></div>
+            </div>
+            <div class="step-item">
+              <div class="step-num">3</div>
+              <div><div class="step-title">AI classifies severity</div><div class="step-desc">Claude (Anthropic) reads report text and returns severity (LOW/MEDIUM/HIGH), harassment signals, and safety advice.</div></div>
+            </div>
+            <div class="step-item">
+              <div class="step-num">4</div>
+              <div><div class="step-title">Safest route recommended</div><div class="step-desc">The route avoids confirmed high-severity zones. Users see a calm safety score — never alarming red markers.</div></div>
+            </div>
+            <div class="step-item">
+              <div class="step-num">5</div>
+              <div><div class="step-title">Routes update silently</div><div class="step-desc">When NGO partners verify new incidents, routing weights update automatically for all active sessions.</div></div>
+            </div>
+          </div>
+        </div>
+
+        <div class="about-grid-2">
+          <div class="card sdg-card">
+            <div class="sdg-num" style="color:#d4381e">5</div>
+            <div>
+              <div class="sdg-title">SDG 5 — Gender Equality</div>
+              <p class="sdg-desc">SAFARA directly addresses gender-based harassment, making public transit safer for women and gender-diverse individuals.</p>
+            </div>
+          </div>
+          <div class="card sdg-card">
+            <div class="sdg-num" style="color:#e89220">11</div>
+            <div>
+              <div class="sdg-title">SDG 11 — Sustainable Cities</div>
+              <p class="sdg-desc">Safe mobility is foundational to liveable cities. SAFARA builds the data layer that makes transit trusted for all.</p>
+            </div>
+          </div>
+        </div>
+
+        <!-- API Key -->
+        <div class="card" style="border-color:#bfdbfe;background:#eff6ff">
+          <div class="card-header">
+            <span class="card-title" style="color:var(--blue)">🤖 LLM Integration — Claude API Key</span>
+            <span class="card-badge" id="api-status-badge">Not configured</span>
+          </div>
+          <p style="font-size:.82rem;color:var(--muted);line-height:1.7;margin-bottom:16px">
+            SAFARA uses <strong>Claude (claude-sonnet-4-20250514)</strong> to classify incident severity, detect harassment signals, and generate safe route advice. Enter your Anthropic API key to enable live AI classification. Without a key the app falls back to keyword matching.
+          </p>
+          <div class="api-key-row">
+            <input type="password" id="api-key-input" class="api-key-input" placeholder="sk-ant-api03-…"/>
+            <button class="api-save-btn" id="api-save-btn">Save Key</button>
+          </div>
+          <p class="api-key-hint">Key is stored only in your browser's localStorage. Never sent anywhere except directly to api.anthropic.com.</p>
+        </div>
+
+      </div>
+    </main>
+  </div>
+</div>
+
+<script src="../js/utils.js"></script>
+<script>
+  const user = requireAuth();
+  if (!user) throw new Error('not authed');
+
+  document.getElementById('app-header').innerHTML = renderHeader(user);
+  const nav = user.role === 'admin'
+    ? [{id:'gov',icon:'🏛',label:'Analytics'},{id:'incidents',icon:'📋',label:'Incidents'},{id:'ngo',icon:'🛡',label:'Emergency'},{id:'about',icon:'ℹ️',label:'About'}]
+    : user.role === 'ngo'
+    ? [{id:'incidents',icon:'📊',label:'Incidents'},{id:'ngo',icon:'🛡',label:'Emergency'},{id:'report',icon:'📋',label:'Report'},{id:'about',icon:'ℹ️',label:'About'}]
+    : [{id:'map',icon:'🗺',label:'Navigate'},{id:'report',icon:'📋',label:'Report'},{id:'ngo',icon:'🛡',label:'Emergency'},{id:'about',icon:'ℹ️',label:'About'}];
+  document.getElementById('sidebar').innerHTML = renderSidebar(nav, 'about', id => {
+    const pages={map:'map.html',report:'report.html',ngo:'ngo.html',about:'about.html',incidents:'incidents.html',gov:'gov.html'};
+    if(pages[id]) window.location.href=pages[id];
+  });
+
+  // API key
+  const saved = localStorage.getItem('safara_apikey') || '';
+  document.getElementById('api-key-input').value = saved;
+  const badge = document.getElementById('api-status-badge');
+  badge.textContent = saved ? '● Active' : 'Not configured';
+  badge.className = `card-badge ${saved ? 'badge-green' : 'badge-amber'}`;
+
+  document.getElementById('api-save-btn').addEventListener('click', () => {
+    const key = document.getElementById('api-key-input').value.trim();
+    localStorage.setItem('safara_apikey', key);
+    badge.textContent = key ? '● Active' : 'Not configured';
+    badge.className = `card-badge ${key ? 'badge-green' : 'badge-amber'}`;
+    document.getElementById('api-save-btn').textContent = '✓ Saved';
+    setTimeout(() => document.getElementById('api-save-btn').textContent = 'Save Key', 2000);
+    Toast.show('API key saved', 'AI classification is now live.', '🤖');
+  });
+</script>
+</body>
+</html>

@@ -1,0 +1,94 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>SAFARA — Incidents</title>
+  <link rel="stylesheet" href="../css/base.css"/>
+  <link rel="stylesheet" href="../css/pages.css"/>
+</head>
+<body>
+
+<div class="app-shell">
+  <header class="header" id="app-header"></header>
+  <div class="app-body">
+    <nav class="sidebar" id="sidebar"></nav>
+    <main class="main">
+      <div class="content-panel">
+
+        <div>
+          <h2 class="panel-title" id="page-title">Recent Reports</h2>
+          <p class="panel-sub" id="page-sub">Community safety reports in your area.</p>
+        </div>
+
+        <div class="stats-strip" id="stats-strip"></div>
+        <div id="incidents-list"></div>
+
+      </div>
+    </main>
+  </div>
+</div>
+
+<script src="../js/utils.js"></script>
+<script>
+  const user = requireAuth();
+  if (!user) throw new Error('not authed');
+
+  document.getElementById('app-header').innerHTML = renderHeader(user);
+  const nav = user.role === 'admin'
+    ? [{id:'gov',icon:'🏛',label:'Analytics'},{id:'incidents',icon:'📋',label:'Incidents'},{id:'ngo',icon:'🛡',label:'Emergency'},{id:'about',icon:'ℹ️',label:'About'}]
+    : user.role === 'ngo'
+    ? [{id:'incidents',icon:'📊',label:'Incidents'},{id:'ngo',icon:'🛡',label:'Emergency'},{id:'report',icon:'📋',label:'Report'},{id:'about',icon:'ℹ️',label:'About'}]
+    : [{id:'map',icon:'🗺',label:'Navigate'},{id:'report',icon:'📋',label:'Report'},{id:'ngo',icon:'🛡',label:'Emergency'},{id:'about',icon:'ℹ️',label:'About'}];
+  document.getElementById('sidebar').innerHTML = renderSidebar(nav, 'incidents', id => {
+    const pages={map:'map.html',report:'report.html',ngo:'ngo.html',about:'about.html',incidents:'incidents.html',gov:'gov.html'};
+    if(pages[id]) window.location.href=pages[id];
+  });
+
+  const canVerify = user.role === 'ngo' || user.role === 'admin';
+  if (canVerify) {
+    document.getElementById('page-title').textContent = 'Incident Dashboard';
+    document.getElementById('page-sub').textContent = 'Review and verify community-submitted incidents.';
+  }
+
+  function render() {
+    const incidents = DB.getIncidents();
+    const sevBadge = s => ({HIGH:'badge-red',MEDIUM:'badge-amber',LOW:'badge-blue'}[s]||'badge-blue');
+
+    document.getElementById('stats-strip').innerHTML = `
+      <div class="stat-box"><div class="stat-val">${incidents.length}</div><div class="stat-key">Total Reports</div></div>
+      <div class="stat-box"><div class="stat-val" style="color:var(--amber)">${incidents.filter(i=>i.status==='pending').length}</div><div class="stat-key">Pending Review</div></div>
+      <div class="stat-box"><div class="stat-val" style="color:var(--red)">${incidents.filter(i=>i.severity==='HIGH').length}</div><div class="stat-key">High Severity</div></div>`;
+
+    document.getElementById('incidents-list').innerHTML = incidents.slice().reverse().map(inc => `
+      <div class="card" style="padding:16px 18px;margin-bottom:0">
+        <div style="display:flex;align-items:flex-start;justify-content:space-between;gap:12px">
+          <div style="flex:1">
+            <div class="incident-badges">
+              <span style="font-weight:700;font-size:.88rem;color:var(--navy)">${inc.type}</span>
+              ${inc.severity ? `<span class="card-badge ${sevBadge(inc.severity)}">${inc.severity}</span>` : ''}
+              <span class="card-badge ${inc.status==='confirmed'?'badge-green':inc.status==='rejected'?'badge-red':'badge-blue'}">${inc.status}</span>
+              ${inc.is_harassment ? '<span class="card-badge badge-red">🚨 Harassment</span>' : ''}
+            </div>
+            <div class="incident-loc">${inc.location}</div>
+            ${inc.desc ? `<div style="font-size:.79rem;color:var(--muted);margin-top:3px">${inc.desc}</div>` : ''}
+          </div>
+          ${canVerify && inc.status === 'pending' ? `
+            <div class="incident-verify-btns">
+              <button class="btn-verify btn-verify-confirm" onclick="verify(${inc.id},'confirmed')">✓ Confirm</button>
+              <button class="btn-verify btn-verify-reject"  onclick="verify(${inc.id},'rejected')">✕ Reject</button>
+            </div>` : ''}
+        </div>
+      </div>`).join('<div style="height:10px"></div>');
+  }
+
+  function verify(id, status) {
+    DB.updateIncident(id, { status });
+    Toast.show(status === 'confirmed' ? 'Confirmed' : 'Rejected', status === 'confirmed' ? 'Incident verified.' : 'Report dismissed.', status === 'confirmed' ? '✅' : '❌');
+    render();
+  }
+
+  render();
+</script>
+</body>
+</html>

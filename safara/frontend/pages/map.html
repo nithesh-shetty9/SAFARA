@@ -1,0 +1,115 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>SAFARA — Navigate</title>
+  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"/>
+  <link rel="stylesheet" href="../css/base.css"/>
+  <link rel="stylesheet" href="../css/map.css"/>
+</head>
+<body>
+
+<div class="app-shell">
+  <header class="header" id="app-header"></header>
+
+  <div class="app-body">
+    <nav class="sidebar" id="sidebar"></nav>
+
+    <main class="main">
+      <div class="map-view">
+        <div id="safara-map"></div>
+
+        <!-- ── Welcome card shown on initial load ── -->
+        <div class="map-welcome" id="map-welcome">
+          <div class="map-welcome-card">
+            <div class="map-welcome-icon">🧭</div>
+            <div class="map-welcome-title">Find Your Safest Route</div>
+            <div class="map-welcome-desc">
+              Search any two locations worldwide. Routes are scored against local community safety data.
+            </div>
+            <div class="map-welcome-tips">
+              <div class="map-welcome-tip">
+                <span>📍</span>
+                <span>Type <strong>"My Location"</strong> as start to use your GPS</span>
+              </div>
+              <div class="map-welcome-tip">
+                <span>🌍</span>
+                <span>Works globally — e.g. <em>"Connaught Place, Delhi"</em> or <em>"Times Square, New York"</em></span>
+              </div>
+              <div class="map-welcome-tip">
+                <span>🔴</span>
+                <span>Red dots show confirmed incident hotspots near Bengaluru</span>
+              </div>
+              <div class="map-welcome-tip">
+                <span>💡</span>
+                <span>Add a city name for ambiguous places: <em>"MG Road, Pune"</em></span>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- ── Loading overlay ── -->
+        <div class="map-loading-overlay" id="map-loading">
+          <div class="map-loading-pill">
+            <div class="thinking-dots"><span></span><span></span><span></span></div>
+            Calculating safest routes…
+          </div>
+        </div>
+
+        <!-- ── Route Panel ── -->
+        <div class="route-panel">
+          <div class="rp-header">🧭 Find Safest Route</div>
+          <div class="rp-body">
+            <div class="rp-input-row">
+              <div class="rp-dot" style="background:#2851a3"></div>
+              <input class="rp-input" id="rp-start" placeholder="Start address or 'My Location'"/>
+            </div>
+            <!-- visual connector between dots -->
+            <div style="display:flex;align-items:center;padding:0 4px">
+              <div class="rp-connector"><div class="rp-connector-line"></div></div>
+            </div>
+            <div class="rp-input-row">
+              <div class="rp-dot" style="background:#16a34a"></div>
+              <input class="rp-input" id="rp-dest" placeholder="Destination — anywhere in the world"/>
+            </div>
+            <button class="rp-go" id="rp-go">Compare Routes →</button>
+          </div>
+          <div class="route-cards-section" id="route-cards-section"></div>
+        </div>
+
+        <!-- ── Legend — matches screenshot exactly ── -->
+        <div class="map-legend">
+          <div class="legend-title">Map Legend</div>
+          <div class="legend-row">
+            <div class="legend-dot" style="background:#ef4444"></div>
+            Crime incident
+          </div>
+          <div class="legend-row">
+            <div class="legend-line" style="background:#16a34a"></div>
+            Safest route
+          </div>
+          <div class="legend-row">
+            <div class="legend-line" style="background:#d97706"></div>
+            Moderate
+          </div>
+          <div class="legend-row">
+            <div class="legend-line" style="background:#dc2626"></div>
+            High risk
+          </div>
+          <hr class="legend-divider"/>
+          <label class="legend-toggle">
+            <input type="checkbox" id="crime-toggle" checked/>
+            Show crime spots
+          </label>
+        </div>
+      </div>
+    </main>
+  </div>
+</div>
+
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+<script src="../js/utils.js"></script>
+<script src="../js/map.js"></script>
+</body>
+</html>

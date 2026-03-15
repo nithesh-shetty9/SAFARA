@@ -1,0 +1,101 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>SAFARA — NGO Registration</title>
+  <link rel="stylesheet" href="../css/base.css"/>
+  <link rel="stylesheet" href="../css/auth.css"/>
+</head>
+<body style="min-height:100vh;display:flex;align-items:center;justify-content:center;background:var(--bg);padding:24px 16px">
+
+<div style="background:var(--card);border-radius:20px;box-shadow:0 8px 40px rgba(0,0,0,.10);padding:40px 36px;width:100%;max-width:440px">
+  <div style="display:flex;align-items:center;gap:10px;margin-bottom:28px">
+    <div class="header-mark" style="width:36px;height:36px;border-radius:10px;font-size:1rem">S</div>
+    <span style="font-family:'Playfair Display',serif;font-weight:700;font-size:1.1rem;color:var(--navy)">SAFARA</span>
+  </div>
+
+  <h2 style="font-family:'Playfair Display',serif;font-weight:700;font-size:1.7rem;color:var(--navy);margin-bottom:8px">NGO / Authority Registration</h2>
+  <p style="font-size:.84rem;color:var(--muted);line-height:1.6;margin-bottom:20px">Register your organization to access the SAFARA incident verification dashboard. Your account will be reviewed by our admin team before approval.</p>
+
+  <div class="ngo-notice">
+    <span>⏳</span>
+    <span>NGO accounts require admin approval before accessing the dashboard.</span>
+  </div>
+
+  <div id="ngo-success" style="display:none" class="submitted-box" style="margin-top:0">
+    <div style="font-size:3rem;margin-bottom:16px">✅</div>
+    <h2 style="font-family:'Playfair Display',serif;font-weight:700;font-size:1.6rem;color:var(--navy);margin-bottom:12px">Application Submitted</h2>
+    <p style="font-size:.86rem;color:var(--muted);line-height:1.7;margin-bottom:28px">Your NGO / Authority account is under review. You'll be notified once approved by the SAFARA admin team.</p>
+    <button class="btn-primary" onclick="window.location.href='login.html'">Back to Sign In</button>
+  </div>
+
+  <div id="ngo-form">
+    <div class="field">
+      <label>Organization Name</label>
+      <input id="org" placeholder="Safe City Foundation"/>
+    </div>
+    <div class="field-row">
+      <div class="field">
+        <label>Official Email</label>
+        <input type="email" id="email" placeholder="org@ngo.in"/>
+      </div>
+      <div class="field">
+        <label>Phone Number</label>
+        <input id="phone" placeholder="9876543210"/>
+      </div>
+    </div>
+    <div class="field-row">
+      <div class="field">
+        <label>City / Area</label>
+        <input id="city" placeholder="Bengaluru"/>
+      </div>
+      <div class="field">
+        <label>Registration / License ID</label>
+        <input id="regId" placeholder="NGO-KA-2024-001"/>
+      </div>
+    </div>
+    <div class="field">
+      <label>Password</label>
+      <input type="password" id="pw" placeholder="••••••••"/>
+    </div>
+
+    <button class="btn-primary" id="ngo-btn">Submit for Review →</button>
+    <div style="text-align:center;margin-top:16px;font-size:.84rem;color:var(--muted)">
+      Already registered? <a onclick="window.location.href='login.html'" style="color:var(--blue);font-weight:600;cursor:pointer">Sign in</a>
+    </div>
+  </div>
+</div>
+
+<script src="../js/utils.js"></script>
+<script>
+  const btn = document.getElementById('ngo-btn');
+
+  async function doSubmit() {
+    const org   = document.getElementById('org').value.trim();
+    const email = document.getElementById('email').value.trim();
+    const pw    = document.getElementById('pw').value;
+
+    if (!org || !email || !pw) { Toast.show('Fill required fields', 'Organisation, email and password are required.', '⚠️'); return; }
+    if (DB.emailUsed(email)) { Toast.show('Email taken', 'This email is already registered.', '⚠️'); return; }
+
+    btn.disabled = true; btn.textContent = 'Submitting…';
+    await new Promise(r => setTimeout(r, 700));
+
+    DB.addUser({
+      name: org, email, pw,
+      phone: document.getElementById('phone').value,
+      city:  document.getElementById('city').value,
+      regId: document.getElementById('regId').value,
+      role: 'ngo', status: 'pending'
+    });
+
+    document.getElementById('ngo-form').style.display = 'none';
+    document.getElementById('ngo-success').style.display = 'block';
+    Toast.show('Submitted for review', 'Admin will approve your account within 24 hours.', '🛡');
+  }
+
+  btn.addEventListener('click', doSubmit);
+</script>
+</body>
+</html>

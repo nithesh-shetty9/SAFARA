@@ -1,0 +1,115 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>SAFARA — Gov Dashboard</title>
+  <link rel="stylesheet" href="../css/base.css"/>
+  <link rel="stylesheet" href="../css/pages.css"/>
+</head>
+<body>
+
+<div class="app-shell">
+  <header class="header" id="app-header"></header>
+  <div class="app-body">
+    <nav class="sidebar" id="sidebar"></nav>
+    <main class="main">
+      <div class="content-panel">
+
+        <div>
+          <div style="font-size:.7rem;font-weight:700;color:var(--blue);letter-spacing:.08em;text-transform:uppercase;margin-bottom:6px">Government Portal</div>
+          <h2 class="panel-title">Safety Analytics Dashboard</h2>
+          <p class="panel-sub">Area safety monitoring, incident analytics, and administrative controls.</p>
+        </div>
+
+        <div class="gov-stats" id="gov-stats"></div>
+
+        <div class="card" id="top-areas-card">
+          <div class="card-header">
+            <span class="card-title">📍 High-Incident Areas</span>
+            <span class="card-badge badge-blue">Top 5</span>
+          </div>
+          <div id="top-areas"></div>
+        </div>
+
+        <div class="card">
+          <div class="card-header"><span class="card-title">📋 All Incidents</span></div>
+          <div id="all-incidents"></div>
+        </div>
+
+      </div>
+    </main>
+  </div>
+</div>
+
+<script src="../js/utils.js"></script>
+<script>
+  const user = requireAuth();
+  if (!user) throw new Error('not authed');
+
+  document.getElementById('app-header').innerHTML = renderHeader(user);
+  const nav = [{id:'gov',icon:'🏛',label:'Analytics'},{id:'incidents',icon:'📋',label:'Incidents'},{id:'ngo',icon:'🛡',label:'Emergency'},{id:'about',icon:'ℹ️',label:'About'}];
+  document.getElementById('sidebar').innerHTML = renderSidebar(nav, 'gov', id => {
+    const pages={map:'map.html',report:'report.html',ngo:'ngo.html',about:'about.html',incidents:'incidents.html',gov:'gov.html'};
+    if(pages[id]) window.location.href=pages[id];
+  });
+
+  function render() {
+    const incidents = DB.getIncidents();
+    const sevBadge = s => ({HIGH:'badge-red',MEDIUM:'badge-amber',LOW:'badge-blue'}[s]||'badge-blue');
+
+    document.getElementById('gov-stats').innerHTML = [
+      {val: incidents.length,                             key:'Total Reports',    color:'var(--navy)'},
+      {val: incidents.filter(i=>i.status==='pending').length, key:'Pending Review',   color:'var(--amber)'},
+      {val: incidents.filter(i=>i.severity==='HIGH').length,  key:'High Severity',    color:'var(--red)'},
+      {val: incidents.filter(i=>i.is_harassment).length,      key:'Harassment Cases', color:'var(--red)'},
+    ].map(s=>`
+      <div class="stat-box">
+        <div class="stat-val" style="color:${s.color}">${s.val}</div>
+        <div class="stat-key">${s.key}</div>
+      </div>`).join('');
+
+    // Top areas
+    const byArea = incidents.reduce((acc,i)=>{ acc[i.location]=(acc[i.location]||0)+1; return acc; }, {});
+    const topAreas = Object.entries(byArea).sort((a,b)=>b[1]-a[1]).slice(0,5);
+    document.getElementById('top-areas').innerHTML = topAreas.map(([area,count])=>`
+      <div style="display:flex;align-items:center;gap:12px;padding:10px 0;border-bottom:1px solid var(--border)">
+        <div style="flex:1;font-size:.85rem;font-weight:500;color:var(--text)">${area}</div>
+        <div style="font-size:.78rem;color:var(--muted)">${count} report${count>1?'s':''}</div>
+        <div style="width:80px;height:6px;background:var(--border);border-radius:100px;overflow:hidden">
+          <div style="width:${Math.min(100,(count/incidents.length)*100*3)}%;height:100%;background:var(--red);border-radius:100px"></div>
+        </div>
+      </div>`).join('');
+
+    // All incidents
+    document.getElementById('all-incidents').innerHTML = incidents.slice().reverse().map(inc=>`
+      <div class="incident-row">
+        <div style="display:flex;align-items:flex-start;justify-content:space-between;gap:10px">
+          <div style="flex:1">
+            <div class="incident-badges">
+              <span style="font-weight:700;font-size:.84rem;color:var(--navy)">${inc.type}</span>
+              ${inc.severity?`<span class="card-badge ${sevBadge(inc.severity)}">${inc.severity}</span>`:''}
+              <span class="card-badge ${inc.status==='confirmed'?'badge-green':inc.status==='rejected'?'badge-red':'badge-blue'}">${inc.status}</span>
+              ${inc.is_harassment?'<span class="card-badge badge-red">🚨 Harassment</span>':''}
+            </div>
+            <div class="incident-loc">${inc.location}</div>
+          </div>
+          ${inc.status==='pending'?`
+            <div class="incident-verify-btns">
+              <button class="btn-verify btn-verify-confirm" onclick="verify(${inc.id},'confirmed')">✓ Confirm</button>
+              <button class="btn-verify btn-verify-reject"  onclick="verify(${inc.id},'rejected')">✕ Reject</button>
+            </div>`:''}
+        </div>
+      </div>`).join('');
+  }
+
+  function verify(id, status) {
+    DB.updateIncident(id, { status });
+    Toast.show(status==='confirmed'?'Confirmed':'Rejected','','');
+    render();
+  }
+
+  render();
+</script>
+</body>
+</html>

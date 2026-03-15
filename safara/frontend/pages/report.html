@@ -1,0 +1,194 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>SAFARA — Report</title>
+  <link rel="stylesheet" href="../css/base.css"/>
+  <link rel="stylesheet" href="../css/pages.css"/>
+</head>
+<body>
+
+<div class="app-shell">
+  <header class="header" id="app-header"></header>
+  <div class="app-body">
+    <nav class="sidebar" id="sidebar"></nav>
+    <main class="main">
+      <div class="content-panel" id="page-content">
+
+        <div>
+          <h2 class="panel-title">Report Incident</h2>
+          <p class="panel-sub">Your report is anonymous. It enters our AI verification pipeline before affecting any routes.</p>
+        </div>
+
+        <!-- Form -->
+        <div class="card" id="report-form">
+          <div class="card-header"><span class="card-title">Incident Type</span></div>
+          <div class="incident-type-grid" id="type-grid">
+            <button class="type-option" data-type="Harassment">⚠️ Harassment</button>
+            <button class="type-option" data-type="Suspicious Activity">👁 Suspicious Activity</button>
+            <button class="type-option" data-type="Theft / Snatching">💼 Theft / Snatching</button>
+            <button class="type-option" data-type="Unsafe Environment">🌑 Unsafe Environment</button>
+          </div>
+
+          <div class="field">
+            <label>Location</label>
+            <input id="location" placeholder="e.g. MG Road Bus Stop, Koramangala 5th Block"/>
+            <div class="field-error" id="loc-error" style="display:none">Please enter a location.</div>
+          </div>
+
+          <div class="field">
+            <label>Description <span style="font-weight:400;text-transform:none;letter-spacing:0;color:var(--muted)">(AI will analyse this)</span></label>
+            <textarea id="desc" style="min-height:90px;resize:vertical" placeholder="Describe what happened. Our NLP model will classify severity from your words."></textarea>
+          </div>
+
+          <div class="field">
+            <label>Date &amp; Time</label>
+            <input type="datetime-local" id="ts"/>
+          </div>
+
+          <div id="ai-thinking" class="ai-panel" style="display:none">
+            <div class="ai-panel-header">🤖 SAFARA AI</div>
+            <div class="thinking">
+              <div class="thinking-dots"><span></span><span></span><span></span></div>
+              Analysing incident severity…
+            </div>
+          </div>
+
+          <button class="submit-btn" id="submit-btn" style="margin-top:8px">Submit Report</button>
+        </div>
+
+        <!-- How it works card -->
+        <div class="card" style="background:#eff6ff;border:1px solid #bfdbfe">
+          <div class="card-header"><span class="card-title" style="color:var(--blue)">🤖 How AI Classification Works</span></div>
+          <p style="font-size:.82rem;color:var(--muted);line-height:1.75">
+            When you submit a report, SAFARA sends the description to <strong>Claude (Anthropic)</strong> — a large language model.
+            It classifies severity as <strong>LOW / MEDIUM / HIGH</strong>, detects harassment signals,
+            and generates a calm safety suggestion. Results feed into the routing engine to silently avoid unsafe zones.
+          </p>
+        </div>
+
+        <!-- Success (hidden initially) -->
+        <div id="report-success" style="display:none">
+          <div class="card" id="ai-result-card" style="display:none">
+            <div class="card-header">
+              <span class="card-title">🤖 AI Analysis Result</span>
+              <span class="card-badge" id="sev-badge"></span>
+            </div>
+            <p id="ai-summary" style="font-size:.85rem;color:var(--text);line-height:1.7;margin-bottom:12px"></p>
+            <p id="ai-advice" style="font-size:.83rem;color:var(--muted);line-height:1.6;font-style:italic"></p>
+            <div id="ai-tags" style="display:flex;gap:6px;flex-wrap:wrap;margin-top:12px"></div>
+          </div>
+          <div class="success-msg">
+            <div class="success-icon">✅</div>
+            <div class="success-title">Thank you for your report.</div>
+            <div class="success-body">SAFARA will use this to improve route safety. Your identity remains anonymous. Routes near this area will be silently updated.</div>
+          </div>
+          <button class="submit-btn" style="max-width:220px" onclick="resetForm()">Submit another</button>
+        </div>
+
+      </div>
+    </main>
+  </div>
+</div>
+
+<script src="../js/utils.js"></script>
+<script>
+  const user = requireAuth();
+  if (user) {
+    document.getElementById('app-header').innerHTML = renderHeader(user);
+    const nav = user.role === 'admin'
+      ? [{ id:'gov',icon:'🏛',label:'Analytics'},{id:'incidents',icon:'📋',label:'Incidents'},{id:'ngo',icon:'🛡',label:'Emergency'},{id:'about',icon:'ℹ️',label:'About'}]
+      : user.role === 'ngo'
+      ? [{id:'incidents',icon:'📊',label:'Incidents'},{id:'ngo',icon:'🛡',label:'Emergency'},{id:'report',icon:'📋',label:'Report'},{id:'about',icon:'ℹ️',label:'About'}]
+      : [{id:'map',icon:'🗺',label:'Navigate'},{id:'report',icon:'📋',label:'Report'},{id:'ngo',icon:'🛡',label:'Emergency'},{id:'about',icon:'ℹ️',label:'About'}];
+    document.getElementById('sidebar').innerHTML = renderSidebar(nav, 'report', id => {
+      const pages={map:'map.html',report:'report.html',ngo:'ngo.html',about:'about.html',incidents:'incidents.html',gov:'gov.html'};
+      if(pages[id]) window.location.href=pages[id];
+    });
+  }
+
+  // Set default datetime
+  document.getElementById('ts').value = new Date().toISOString().slice(0, 16);
+
+  // Geocode a location string → [lat, lng] or null
+  async function geocodeLocation(q) {
+    try {
+      const url = `https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(q)}&limit=1`;
+      const res  = await fetch(url, { headers: { 'Accept-Language': 'en' } });
+      const data = await res.json();
+      if (data?.[0]) return [parseFloat(data[0].lat), parseFloat(data[0].lon)];
+    } catch {}
+    return null;
+  }
+
+  // Type selection
+  let selectedType = null;
+  document.querySelectorAll('.type-option').forEach(btn => {
+    btn.addEventListener('click', () => {
+      document.querySelectorAll('.type-option').forEach(b => b.classList.remove('selected'));
+      btn.classList.add('selected');
+      selectedType = btn.dataset.type;
+    });
+  });
+
+  async function doSubmit() {
+    const loc = document.getElementById('location').value.trim();
+    if (!loc) { document.getElementById('loc-error').style.display='block'; return; }
+    document.getElementById('loc-error').style.display = 'none';
+
+    const btn = document.getElementById('submit-btn');
+    btn.disabled = true; btn.textContent = 'Analysing & Submitting…';
+    document.getElementById('ai-thinking').style.display = 'block';
+
+    const desc = document.getElementById('desc').value.trim();
+    const apiKey = localStorage.getItem('safara_apikey') || '';
+    const inputText = `${selectedType || 'General incident'}. ${desc}`;
+
+    // Run AI classification and geocoding in parallel
+    const [ai, coords] = await Promise.all([
+      classifyWithLLM(inputText, loc, apiKey),
+      geocodeLocation(loc),
+    ]);
+
+    DB.addIncident({
+      type: selectedType || 'General', location: loc, desc,
+      ts: document.getElementById('ts').value,
+      userId: user.id, severity: ai.severity,
+      is_harassment: ai.is_harassment, status: 'pending',
+      lat: coords ? coords[0] : 12.9716 + (Math.random()-.5)*.08,
+      lng: coords ? coords[1] : 77.5946 + (Math.random()-.5)*.08,
+    });
+
+    // Show AI result
+    const sevMap = { HIGH:'badge-red', MEDIUM:'badge-amber', LOW:'badge-green' };
+    document.getElementById('sev-badge').textContent = ai.severity;
+    document.getElementById('sev-badge').className = `card-badge ${sevMap[ai.severity]||'badge-blue'}`;
+    document.getElementById('ai-summary').textContent = ai.summary;
+    document.getElementById('ai-advice').textContent = '💡 ' + ai.route_advice;
+    const tagsEl = document.getElementById('ai-tags');
+    tagsEl.innerHTML = (ai.tags||[]).map(t=>`<span style="background:#f1f5f9;border:1px solid #e2e8f0;border-radius:100px;padding:3px 10px;font-size:.72rem;color:var(--muted)">${t}</span>`).join('');
+    document.getElementById('ai-result-card').style.display = 'block';
+
+    document.getElementById('report-form').style.display = 'none';
+    document.getElementById('ai-thinking').style.display = 'none';
+    document.getElementById('report-success').style.display = 'block';
+    Toast.show('Report submitted', 'AI classification complete.', '✅');
+  }
+
+  function resetForm() {
+    document.getElementById('report-form').style.display = 'block';
+    document.getElementById('report-success').style.display = 'none';
+    document.getElementById('ai-result-card').style.display = 'none';
+    document.getElementById('submit-btn').disabled = false;
+    document.getElementById('submit-btn').textContent = 'Submit Report';
+    document.getElementById('location').value = '';
+    document.getElementById('desc').value = '';
+    selectedType = null;
+    document.querySelectorAll('.type-option').forEach(b => b.classList.remove('selected'));
+  }
+
+  document.getElementById('submit-btn').addEventListener('click', doSubmit);
+</script>
+</body>
+</html>

@@ -1,0 +1,158 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>SAFARA — Emergency</title>
+  <link rel="stylesheet" href="../css/base.css"/>
+  <link rel="stylesheet" href="../css/pages.css"/>
+</head>
+<body>
+
+<div class="app-shell">
+  <header class="header" id="app-header"></header>
+  <div class="app-body">
+    <nav class="sidebar" id="sidebar"></nav>
+    <main class="main" style="display:flex;flex-direction:column;overflow:hidden">
+
+      <!-- SOS Banner -->
+      <div class="sos-banner">
+        <div class="sos-banner-text">
+          <div class="sos-title">🚨 Emergency SOS</div>
+          <div class="sos-desc">Tap to instantly alert nearby authorities and share your GPS location with emergency services.</div>
+        </div>
+        <button class="sos-send-btn" onclick="openSOSModal()">SEND SOS ALERT</button>
+      </div>
+
+      <!-- Contacts -->
+      <div class="content-panel">
+        <div>
+          <div style="font-size:.7rem;font-weight:700;color:var(--green);letter-spacing:.08em;text-transform:uppercase;margin-bottom:6px">Emergency Contacts</div>
+          <h2 class="panel-title">Helplines &amp; NGOs</h2>
+          <p class="panel-sub">Verified emergency contacts. Use Call to dial directly or Alert to send a digital SOS notification.</p>
+        </div>
+
+        <div class="contact-grid">
+
+          <div class="contact-card">
+            <div class="contact-icon-row">
+              <div class="contact-icon">👮</div>
+              <div>
+                <div class="contact-name">Police Emergency</div>
+                <div class="contact-num">📞 100</div>
+              </div>
+            </div>
+            <p class="contact-desc">Immediate police assistance for emergencies, crimes and safety threats in your area. Available 24/7.</p>
+            <div class="contact-btns">
+              <button class="btn-call" onclick="callNumber('100','Police Emergency')">📞 Call 100</button>
+              <button class="btn-alert" onclick="sendAlert('Police Emergency')">🔔 Alert</button>
+            </div>
+          </div>
+
+          <div class="contact-card">
+            <div class="contact-icon-row">
+              <div class="contact-icon">👩</div>
+              <div>
+                <div class="contact-name">Women Helpline</div>
+                <div class="contact-num">📞 1091</div>
+              </div>
+            </div>
+            <p class="contact-desc">24/7 helpline for women in distress. Immediate support for harassment and safety cases.</p>
+            <div class="contact-btns">
+              <button class="btn-call" onclick="callNumber('1091','Women Helpline')">📞 Call 1091</button>
+              <button class="btn-alert" onclick="sendAlert('Women Helpline')">🔔 Alert</button>
+            </div>
+          </div>
+
+          <div class="contact-card">
+            <div class="contact-icon-row">
+              <div class="contact-icon">🚑</div>
+              <div>
+                <div class="contact-name">Ambulance</div>
+                <div class="contact-num">📞 108</div>
+              </div>
+            </div>
+            <p class="contact-desc">Emergency medical services. Immediate dispatch for injuries and medical emergencies.</p>
+            <div class="contact-btns">
+              <button class="btn-call" onclick="callNumber('108','Ambulance')">📞 Call 108</button>
+              <button class="btn-alert" onclick="sendAlert('Ambulance')">🔔 Alert</button>
+            </div>
+          </div>
+
+          <div class="contact-card">
+            <div class="contact-icon-row">
+              <div class="contact-icon">🔥</div>
+              <div>
+                <div class="contact-name">Fire Emergency</div>
+                <div class="contact-num">📞 101</div>
+              </div>
+            </div>
+            <p class="contact-desc">Fire brigade and rescue services. Available 24/7 for fire and disaster emergencies.</p>
+            <div class="contact-btns">
+              <button class="btn-call" onclick="callNumber('101','Fire Emergency')">📞 Call 101</button>
+              <button class="btn-alert" onclick="sendAlert('Fire Emergency')">🔔 Alert</button>
+            </div>
+          </div>
+
+          <div class="contact-card">
+            <div class="contact-icon-row">
+              <div class="contact-icon">💻</div>
+              <div>
+                <div class="contact-name">Cyber Crime</div>
+                <div class="contact-num">📞 1930</div>
+              </div>
+            </div>
+            <p class="contact-desc">Report online fraud, cyber harassment and digital crimes to the national cyber helpline.</p>
+            <div class="contact-btns">
+              <button class="btn-call" onclick="callNumber('1930','Cyber Crime')">📞 Call 1930</button>
+              <button class="btn-alert" onclick="sendAlert('Cyber Crime')">🔔 Alert</button>
+            </div>
+          </div>
+
+          <div class="contact-card">
+            <div class="contact-icon-row">
+              <div class="contact-icon">🤝</div>
+              <div>
+                <div class="contact-name">iCall NGO</div>
+                <div class="contact-num">📞 9152987821</div>
+              </div>
+            </div>
+            <p class="contact-desc">Psychosocial support and counselling by trained professionals. Mental health support available.</p>
+            <div class="contact-btns">
+              <button class="btn-call" onclick="callNumber('9152987821','iCall NGO')">📞 Call iCall</button>
+              <button class="btn-alert" onclick="sendAlert('iCall NGO')">🔔 Alert</button>
+            </div>
+          </div>
+
+        </div>
+      </div>
+    </main>
+  </div>
+</div>
+
+<script src="../js/utils.js"></script>
+<script>
+  const user = requireAuth();
+  if (user) {
+    document.getElementById('app-header').innerHTML = renderHeader(user);
+    const nav = user.role === 'admin'
+      ? [{id:'gov',icon:'🏛',label:'Analytics'},{id:'incidents',icon:'📋',label:'Incidents'},{id:'ngo',icon:'🛡',label:'Emergency'},{id:'about',icon:'ℹ️',label:'About'}]
+      : user.role === 'ngo'
+      ? [{id:'incidents',icon:'📊',label:'Incidents'},{id:'ngo',icon:'🛡',label:'Emergency'},{id:'report',icon:'📋',label:'Report'},{id:'about',icon:'ℹ️',label:'About'}]
+      : [{id:'map',icon:'🗺',label:'Navigate'},{id:'report',icon:'📋',label:'Report'},{id:'ngo',icon:'🛡',label:'Emergency'},{id:'about',icon:'ℹ️',label:'About'}];
+    document.getElementById('sidebar').innerHTML = renderSidebar(nav, 'ngo', id => {
+      const pages={map:'map.html',report:'report.html',ngo:'ngo.html',about:'about.html',incidents:'incidents.html',gov:'gov.html'};
+      if(pages[id]) window.location.href=pages[id];
+    });
+  }
+
+  function callNumber(num, name) {
+    window.location.href = `tel:${num}`;
+    Toast.show(`Calling ${num}…`, name, '📞');
+  }
+  function sendAlert(name) {
+    Toast.show(`Alert sent to ${name}`, 'Emergency alert delivered.', '🚨');
+  }
+</script>
+</body>
+</html>

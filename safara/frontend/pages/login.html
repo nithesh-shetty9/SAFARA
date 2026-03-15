@@ -1,0 +1,110 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>SAFARA — Sign In</title>
+  <link rel="stylesheet" href="../css/base.css"/>
+  <link rel="stylesheet" href="../css/auth.css"/>
+</head>
+<body>
+
+<div class="auth-screen">
+  <!-- Left panel -->
+  <div class="auth-left">
+    <div class="auth-brand">
+      <div class="auth-brand-mark">S</div>
+      <span class="auth-brand-name">SAFARA</span>
+    </div>
+    <h1 class="auth-headline">Navigate <em>Smart.</em><br/>Travel Safe.</h1>
+    <p class="auth-tagline">
+      SAFARA uses community incident reports and AI to surface the safest route for every journey — not just the fastest.
+    </p>
+    <div class="auth-pills">
+      <span class="auth-pill">🛡 Safety-first routing</span>
+      <span class="auth-pill">🤖 AI-powered NLP</span>
+      <span class="auth-pill">👥 Community driven</span>
+      <span class="auth-pill">🔒 Anonymous reports</span>
+    </div>
+  </div>
+
+  <!-- Right panel -->
+  <div class="auth-right">
+    <div class="auth-form-wrap">
+      <h2 class="auth-form-title">Welcome back</h2>
+      <p class="auth-form-sub">Sign in to access personalized safety routes and incident reporting.</p>
+
+      <div id="login-error" class="auth-error" style="display:none"></div>
+
+      <div class="field">
+        <label>Email Address</label>
+        <input type="email" id="email" placeholder="you@email.com"/>
+      </div>
+      <div class="field">
+        <label>Password</label>
+        <input type="password" id="password" placeholder="••••••••"/>
+      </div>
+
+      <button class="btn-primary" id="login-btn" style="margin-bottom:16px">Sign In →</button>
+
+      <div class="auth-divider">
+        <div class="auth-divider-line"></div>
+        <span>or</span>
+        <div class="auth-divider-line"></div>
+      </div>
+
+      <div class="auth-secondary-btns">
+        <button class="btn-secondary" onclick="window.location.href='signup.html'">Create Account</button>
+        <button class="btn-secondary-outline" onclick="window.location.href='ngo-register.html'">NGO / Register</button>
+      </div>
+
+      <div class="auth-demo-hint">
+        Demo: <strong>user@safara.in</strong> / user123 &nbsp;|&nbsp; <strong>admin@safara.in</strong> / admin123
+      </div>
+    </div>
+  </div>
+</div>
+
+<script src="../js/utils.js"></script>
+<script>
+  // Redirect if already logged in
+  if (Session.get()) window.location.href = 'map.html';
+
+  const loginBtn = document.getElementById('login-btn');
+  const emailEl  = document.getElementById('email');
+  const pwEl     = document.getElementById('password');
+  const errEl    = document.getElementById('login-error');
+
+  function showError(msg) {
+    errEl.textContent = msg;
+    errEl.style.display = 'block';
+  }
+
+  async function doLogin() {
+    errEl.style.display = 'none';
+    const email = emailEl.value.trim();
+    const pw    = pwEl.value;
+    if (!email || !pw) { showError('Please fill in both fields.'); return; }
+
+    loginBtn.disabled = true;
+    loginBtn.textContent = 'Signing in…';
+    await new Promise(r => setTimeout(r, 500));
+
+    const user = DB.findUser(email, pw);
+    if (!user) {
+      loginBtn.disabled = false;
+      loginBtn.textContent = 'Sign In →';
+      showError('Invalid email or password.');
+      return;
+    }
+
+    Session.save(user);
+    const dest = user.role === 'admin' ? 'gov.html' : user.role === 'ngo' ? 'incidents.html' : 'map.html';
+    window.location.href = dest;
+  }
+
+  loginBtn.addEventListener('click', doLogin);
+  [emailEl, pwEl].forEach(el => el.addEventListener('keydown', e => { if (e.key === 'Enter') doLogin(); }));
+</script>
+</body>
+</html>
