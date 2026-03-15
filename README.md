@@ -1,3 +1,4 @@
+click here to see live https://sssafara.netlify.app/
 # SAFARA — Navigate Smart. Travel Safe.
 
 Women's safety navigation app with community incident reporting and AI severity classification.
