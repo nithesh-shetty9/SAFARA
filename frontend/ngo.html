@@ -1,0 +1,120 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>SAFARA — Emergency</title>
+  <link rel="stylesheet" href="css/base.css"/>
+  <link rel="stylesheet" href="css/pages.css"/>
+</head>
+<body>
+
+<div class="app-shell">
+  <header class="header" id="app-header"></header>
+  <div class="app-body">
+    <nav class="sidebar" id="sidebar"></nav>
+    <main class="main" style="display:flex;flex-direction:column;overflow:hidden">
+
+      <!-- SOS Banner -->
+      <div class="sos-banner">
+        <div class="sos-banner-text">
+          <div class="sos-title">🚨 Emergency SOS</div>
+          <div class="sos-desc">Tap to instantly alert nearby authorities and share your GPS location with emergency services.</div>
+        </div>
+        <button class="sos-send-btn" onclick="openSOSModal()">SEND SOS ALERT</button>
+      </div>
+
+      <!-- Contacts -->
+      <div class="content-panel">
+        <div>
+          <div style="font-size:.7rem;font-weight:700;color:var(--green);letter-spacing:.08em;text-transform:uppercase;margin-bottom:6px">Emergency Contacts</div>
+          <h2 class="panel-title">Helplines &amp; NGOs</h2>
+          <p class="panel-sub">Verified emergency contacts. Use Call to dial directly or Alert to send a digital SOS notification.</p>
+        </div>
+
+        <div class="contact-grid" id="contact-grid">
+          <div class="contact-card">Loading emergency contacts…</div>
+        </div>
+      </div>
+    </main>
+  </div>
+</div>
+
+<script src="js/api.js"></script>
+<script src="js/common.js"></script>
+<script>
+  const user = requireAuth();
+  if (user) {
+  if (user) {
+    document.getElementById('app-header').innerHTML = renderHeader(user);
+    const nav = user.role === 'admin'
+      ? [{id:'gov',icon:'🏛',label:'Analytics'},{id:'incidents',icon:'📋',label:'Incidents'},{id:'ngo',icon:'🛡',label:'Emergency'},{id:'about',icon:'ℹ️',label:'About'}]
+      : user.role === 'ngo'
+      ? [{id:'incidents',icon:'📊',label:'Incidents'},{id:'ngo',icon:'🛡',label:'Emergency'},{id:'report',icon:'📋',label:'Report'},{id:'about',icon:'ℹ️',label:'About'}]
+      : [{id:'map',icon:'🗺',label:'Navigate'},{id:'report',icon:'📋',label:'Report'},{id:'ngo',icon:'🛡',label:'Emergency'},{id:'about',icon:'ℹ️',label:'About'}];
+    document.getElementById('sidebar').innerHTML = renderSidebar(nav, 'ngo', id => {
+      const pages={map:'map.html',report:'report.html',ngo:'ngo.html',about:'about.html',incidents:'incidents.html',gov:'gov.html'};
+      if(pages[id]) window.location.href=pages[id];
+    });
+  }
+
+  function callNumber(num, name) {
+    window.location.href = `tel:${num}`;
+    Toast.show(`Calling ${num}…`, name, '📞');
+  }
+
+  function sendAlert(name) {
+    Toast.show(`Alert sent to ${name}`, 'Emergency alert delivered.', '🚨');
+  }
+
+  function contactIcon(type) {
+    const category = (type || '').toLowerCase();
+    if (category.includes('police')) return '👮';
+    if (category.includes('ambulance') || category.includes('medical')) return '🚑';
+    if (category.includes('fire')) return '🔥';
+    if (category.includes('cyber')) return '💻';
+    if (category.includes('ngo') || category.includes('support')) return '🤝';
+    return '📞';
+  }
+
+  async function loadContacts() {
+    const grid = document.getElementById('contact-grid');
+    try {
+      const contacts = await API.getEmergencyContacts();
+      grid.innerHTML = contacts.length ? contacts.map(contact => {
+        const contactName = contact.name || contact.organization || 'Emergency contact';
+        const details = [contact.organization, contact.type, contact.city].filter(Boolean).join(' · ');
+        const phone = String(contact.phone || '').trim();
+        return `
+          <div class="contact-card">
+            <div class="contact-icon-row">
+              <div class="contact-icon">${contactIcon(contact.type)}</div>
+              <div>
+                <div class="contact-name">${escapeHTML(contactName)}</div>
+                <div class="contact-num">📞 ${escapeHTML(phone || 'Phone unavailable')}</div>
+              </div>
+            </div>
+            <p class="contact-desc">${escapeHTML(details || 'Emergency contact')}</p>
+            <div class="contact-btns">
+              <button class="btn-call" data-contact-action="call" data-phone="${escapeHTML(phone)}" data-name="${escapeHTML(contactName)}" ${phone ? '' : 'disabled'}>📞 Call</button>
+              <button class="btn-alert" data-contact-action="alert" data-name="${escapeHTML(contactName)}">🔔 Alert</button>
+            </div>
+          </div>`;
+      }).join('') : '<div class="contact-card">No emergency contacts are available.</div>';
+    } catch (error) {
+      grid.innerHTML = `<div class="contact-card">${escapeHTML(error.message)}</div>`;
+    }
+  }
+
+  document.getElementById('contact-grid').addEventListener('click', event => {
+    const button = event.target.closest('[data-contact-action]');
+    if (!button) return;
+    if (button.dataset.contactAction === 'call') callNumber(button.dataset.phone, button.dataset.name);
+    if (button.dataset.contactAction === 'alert') sendAlert(button.dataset.name);
+  });
+
+  loadContacts();
+  }
+</script>
+</body>
+</html>

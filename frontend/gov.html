@@ -4,8 +4,8 @@
   <meta charset="UTF-8"/>
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
   <title>SAFARA — Gov Dashboard</title>
-  <link rel="stylesheet" href="../css/base.css"/>
-  <link rel="stylesheet" href="../css/pages.css"/>
+  <link rel="stylesheet" href="css/base.css"/>
+  <link rel="stylesheet" href="css/pages.css"/>
 </head>
 <body>
 
@@ -42,10 +42,11 @@
   </div>
 </div>
 
-<script src="../js/utils.js"></script>
+<script src="js/api.js"></script>
+<script src="js/common.js"></script>
 <script>
   const user = requireAuth();
-  if (!user) throw new Error('not authed');
+  if (user) {
 
   document.getElementById('app-header').innerHTML = renderHeader(user);
   const nav = [{id:'gov',icon:'🏛',label:'Analytics'},{id:'incidents',icon:'📋',label:'Incidents'},{id:'ngo',icon:'🛡',label:'Emergency'},{id:'about',icon:'ℹ️',label:'About'}];
@@ -54,15 +55,24 @@
     if(pages[id]) window.location.href=pages[id];
   });
 
-  function render() {
-    const incidents = DB.getIncidents();
+  async function render() {
+    const incidentsRoot = document.getElementById('all-incidents');
+    incidentsRoot.innerHTML = '<div class="incident-row">Loading reports…</div>';
+    try {
+    const [incidents, stats] = await Promise.all([API.getIncidents(), API.getStats()]);
     const sevBadge = s => ({HIGH:'badge-red',MEDIUM:'badge-amber',LOW:'badge-blue'}[s]||'badge-blue');
+    const countStatus = status => incidents.filter(incident => incident.status === status).length;
+    const countSeverity = severity => incidents.filter(incident => incident.severity === severity).length;
 
     document.getElementById('gov-stats').innerHTML = [
-      {val: incidents.length,                             key:'Total Reports',    color:'var(--navy)'},
-      {val: incidents.filter(i=>i.status==='pending').length, key:'Pending Review',   color:'var(--amber)'},
-      {val: incidents.filter(i=>i.severity==='HIGH').length,  key:'High Severity',    color:'var(--red)'},
-      {val: incidents.filter(i=>i.is_harassment).length,      key:'Harassment Cases', color:'var(--red)'},
+      {val: stats.total, key:'Total Reports', color:'var(--navy)'},
+      {val: stats.pending, key:'Pending Review', color:'var(--amber)'},
+      {val: countStatus('confirmed'), key:'Confirmed', color:'var(--green)'},
+      {val: countStatus('rejected'), key:'Rejected', color:'var(--muted)'},
+      {val: countSeverity('HIGH'), key:'High Severity', color:'var(--red)'},
+      {val: countSeverity('MEDIUM'), key:'Medium Severity', color:'var(--amber)'},
+      {val: countSeverity('LOW'), key:'Low Severity', color:'var(--blue)'},
+      {val: stats.harassment, key:'Harassment Cases', color:'var(--red)'},
     ].map(s=>`
       <div class="stat-box">
         <div class="stat-val" style="color:${s.color}">${s.val}</div>
@@ -70,29 +80,29 @@
       </div>`).join('');
 
     // Top areas
-    const byArea = incidents.reduce((acc,i)=>{ acc[i.location]=(acc[i.location]||0)+1; return acc; }, {});
-    const topAreas = Object.entries(byArea).sort((a,b)=>b[1]-a[1]).slice(0,5);
-    document.getElementById('top-areas').innerHTML = topAreas.map(([area,count])=>`
+    const topAreas = stats.top_areas || [];
+    document.getElementById('top-areas').innerHTML = topAreas.map(({area, count})=>`
       <div style="display:flex;align-items:center;gap:12px;padding:10px 0;border-bottom:1px solid var(--border)">
-        <div style="flex:1;font-size:.85rem;font-weight:500;color:var(--text)">${area}</div>
+        <div style="flex:1;font-size:.85rem;font-weight:500;color:var(--text)">${escapeHTML(area)}</div>
         <div style="font-size:.78rem;color:var(--muted)">${count} report${count>1?'s':''}</div>
         <div style="width:80px;height:6px;background:var(--border);border-radius:100px;overflow:hidden">
-          <div style="width:${Math.min(100,(count/incidents.length)*100*3)}%;height:100%;background:var(--red);border-radius:100px"></div>
+          <div style="width:${Math.min(100,(count/(stats.total || 1))*100*3)}%;height:100%;background:var(--red);border-radius:100px"></div>
         </div>
       </div>`).join('');
 
     // All incidents
-    document.getElementById('all-incidents').innerHTML = incidents.slice().reverse().map(inc=>`
+    incidentsRoot.innerHTML = incidents.length ? incidents.map(inc=>`
       <div class="incident-row">
         <div style="display:flex;align-items:flex-start;justify-content:space-between;gap:10px">
           <div style="flex:1">
             <div class="incident-badges">
-              <span style="font-weight:700;font-size:.84rem;color:var(--navy)">${inc.type}</span>
+              <span style="font-weight:700;font-size:.84rem;color:var(--navy)">${escapeHTML(inc.type)}</span>
               ${inc.severity?`<span class="card-badge ${sevBadge(inc.severity)}">${inc.severity}</span>`:''}
               <span class="card-badge ${inc.status==='confirmed'?'badge-green':inc.status==='rejected'?'badge-red':'badge-blue'}">${inc.status}</span>
               ${inc.is_harassment?'<span class="card-badge badge-red">🚨 Harassment</span>':''}
             </div>
-            <div class="incident-loc">${inc.location}</div>
+            <div class="incident-loc">${escapeHTML(inc.location)}</div>
+            ${(inc.description || inc.desc) ? `<div style="font-size:.79rem;color:var(--muted);margin-top:3px">${escapeHTML(inc.description || inc.desc)}</div>` : ''}
           </div>
           ${inc.status==='pending'?`
             <div class="incident-verify-btns">
@@ -100,16 +110,24 @@
               <button class="btn-verify btn-verify-reject"  onclick="verify(${inc.id},'rejected')">✕ Reject</button>
             </div>`:''}
         </div>
-      </div>`).join('');
+      </div>`).join('') : '<div class="incident-row">No incident reports found.</div>';
+    } catch (error) {
+      incidentsRoot.innerHTML = `<div class="incident-row">${escapeHTML(error.message)}</div>`;
+    }
   }
 
-  function verify(id, status) {
-    DB.updateIncident(id, { status });
-    Toast.show(status==='confirmed'?'Confirmed':'Rejected','','');
-    render();
+  async function verify(id, status) {
+    try {
+      await API.updateIncident(id, { status });
+      Toast.show(status === 'confirmed' ? 'Confirmed' : 'Rejected', 'Incident status updated.', '✅');
+      await render();
+    } catch (error) {
+      Toast.show('Update failed', error.message, '⚠️');
+    }
   }
 
   render();
+  }
 </script>
 </body>
 </html>

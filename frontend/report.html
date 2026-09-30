@@ -4,8 +4,8 @@
   <meta charset="UTF-8"/>
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
   <title>SAFARA — Report</title>
-  <link rel="stylesheet" href="../css/base.css"/>
-  <link rel="stylesheet" href="../css/pages.css"/>
+  <link rel="stylesheet" href="css/base.css"/>
+  <link rel="stylesheet" href="css/pages.css"/>
 </head>
 <body>
 
@@ -92,9 +92,11 @@
   </div>
 </div>
 
-<script src="../js/utils.js"></script>
+<script src="js/api.js"></script>
+<script src="js/common.js"></script>
 <script>
   const user = requireAuth();
+  if (user) {
   if (user) {
     document.getElementById('app-header').innerHTML = renderHeader(user);
     const nav = user.role === 'admin'
@@ -142,38 +144,50 @@
     document.getElementById('ai-thinking').style.display = 'block';
 
     const desc = document.getElementById('desc').value.trim();
-    const apiKey = localStorage.getItem('safara_apikey') || '';
     const inputText = `${selectedType || 'General incident'}. ${desc}`;
 
-    // Run AI classification and geocoding in parallel
-    const [ai, coords] = await Promise.all([
-      classifyWithLLM(inputText, loc, apiKey),
-      geocodeLocation(loc),
-    ]);
+    try {
+      const [ai, coords] = await Promise.all([
+        API.classifyIncident(inputText, loc),
+        geocodeLocation(loc),
+      ]);
+      if (!coords) throw new Error('We could not locate this address. Please add a nearby landmark or city.');
 
-    DB.addIncident({
-      type: selectedType || 'General', location: loc, desc,
-      ts: document.getElementById('ts').value,
-      userId: user.id, severity: ai.severity,
-      is_harassment: ai.is_harassment, status: 'pending',
-      lat: coords ? coords[0] : 12.9716 + (Math.random()-.5)*.08,
-      lng: coords ? coords[1] : 77.5946 + (Math.random()-.5)*.08,
-    });
+      const incident = await API.createIncident({
+        type: selectedType || 'General',
+        location: loc,
+        latitude: coords[0],
+        longitude: coords[1],
+        description: desc,
+        severity: ai.severity || 'LOW',
+        is_harassment: Boolean(ai.is_harassment),
+      });
 
-    // Show AI result
-    const sevMap = { HIGH:'badge-red', MEDIUM:'badge-amber', LOW:'badge-green' };
-    document.getElementById('sev-badge').textContent = ai.severity;
-    document.getElementById('sev-badge').className = `card-badge ${sevMap[ai.severity]||'badge-blue'}`;
-    document.getElementById('ai-summary').textContent = ai.summary;
-    document.getElementById('ai-advice').textContent = '💡 ' + ai.route_advice;
-    const tagsEl = document.getElementById('ai-tags');
-    tagsEl.innerHTML = (ai.tags||[]).map(t=>`<span style="background:#f1f5f9;border:1px solid #e2e8f0;border-radius:100px;padding:3px 10px;font-size:.72rem;color:var(--muted)">${t}</span>`).join('');
-    document.getElementById('ai-result-card').style.display = 'block';
+      const sevMap = { HIGH:'badge-red', MEDIUM:'badge-amber', LOW:'badge-green' };
+      document.getElementById('sev-badge').textContent = incident.severity;
+      document.getElementById('sev-badge').className = `card-badge ${sevMap[incident.severity] || 'badge-blue'}`;
+      document.getElementById('ai-summary').textContent = ai.summary || 'Report received and queued for review.';
+      document.getElementById('ai-advice').textContent = '💡 ' + (ai.route_advice || 'Please stay in a well-lit, populated area.');
+      const tagsEl = document.getElementById('ai-tags');
+      tagsEl.textContent = '';
+      (ai.tags || []).forEach(tag => {
+        const tagEl = document.createElement('span');
+        tagEl.textContent = tag;
+        tagEl.style.cssText = 'background:#f1f5f9;border:1px solid #e2e8f0;border-radius:100px;padding:3px 10px;font-size:.72rem;color:var(--muted)';
+        tagsEl.appendChild(tagEl);
+      });
+      document.getElementById('ai-result-card').style.display = 'block';
 
-    document.getElementById('report-form').style.display = 'none';
-    document.getElementById('ai-thinking').style.display = 'none';
-    document.getElementById('report-success').style.display = 'block';
-    Toast.show('Report submitted', 'AI classification complete.', '✅');
+      document.getElementById('report-form').style.display = 'none';
+      document.getElementById('report-success').style.display = 'block';
+      Toast.show('Report submitted', 'Your incident was saved to SAFARA.', '✅');
+    } catch (error) {
+      Toast.show('Report not submitted', error.message, '⚠️');
+      btn.disabled = false;
+      btn.textContent = 'Submit Report';
+    } finally {
+      document.getElementById('ai-thinking').style.display = 'none';
+    }
   }
 
   function resetForm() {
@@ -189,6 +203,7 @@
   }
 
   document.getElementById('submit-btn').addEventListener('click', doSubmit);
+  }
 </script>
 </body>
 </html>

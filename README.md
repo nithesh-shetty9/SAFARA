@@ -33,8 +33,14 @@ safara/
 
 ## Frontend — Quick Start
 
-Open `frontend/pages/login.html` directly in a browser — no server needed.
-All state is managed via `localStorage`.
+Start the static frontend server in a separate terminal:
+
+```bash
+cd frontend
+python -m http.server 5173
+```
+
+Open `http://localhost:5173/index.html`. Application data is read from Flask/MySQL; the browser stores only the JWT and current user session.
 
 Demo credentials:
 - `user@safara.in` / `user123`   → Commuter view
@@ -45,11 +51,12 @@ Demo credentials:
 
 ```bash
 cd backend
-pip install -r requirements.txt
-ANTHROPIC_API_KEY=sk-ant-... python app.py
+python -m pip install -r requirements.txt
+python app.py
 ```
 
 Server runs on `http://localhost:5000`
+Configure database credentials and `JWT_SECRET` in `backend/.env`. Set `ANTHROPIC_API_KEY` there to enable live AI classification; keyword fallback remains available without it.
 
 ## Key Improvements (Map Page)
 
@@ -70,13 +77,14 @@ Server runs on `http://localhost:5000`
 | GET | `/api/incidents` | List incidents (auth required) |
 | POST | `/api/incidents` | Submit new incident |
 | PATCH | `/api/incidents/<id>` | Update status (NGO/admin) |
+| GET | `/api/contacts` | List emergency contacts (auth required) |
 | POST | `/api/classify` | AI severity via Claude |
 | GET | `/api/stats` | Dashboard statistics |
 | GET | `/api/health` | Health check |
 
 ### Auth Header
 ```
-Authorization: Bearer <user_id>:<role>
+Authorization: Bearer <JWT>
 ```
 Token is returned on login.
 
@@ -84,6 +92,6 @@ Token is returned on login.
 
 SAFARA uses **Claude claude-sonnet-4-20250514** to classify incident severity (LOW/MEDIUM/HIGH), detect harassment signals, and generate calm route advice.
 
-- Frontend: add your API key in the **About** page → it's saved to `localStorage`
-- Backend: set `ANTHROPIC_API_KEY` environment variable
+- Frontend: submits classifications through the authenticated Flask API
+- Backend: set `ANTHROPIC_API_KEY` in `backend/.env`
 - Without a key: keyword-based fallback classification is used automatically

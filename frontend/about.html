@@ -4,8 +4,8 @@
   <meta charset="UTF-8"/>
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
   <title>SAFARA — About</title>
-  <link rel="stylesheet" href="../css/base.css"/>
-  <link rel="stylesheet" href="../css/pages.css"/>
+  <link rel="stylesheet" href="css/base.css"/>
+  <link rel="stylesheet" href="css/pages.css"/>
 </head>
 <body>
 
@@ -87,20 +87,15 @@
           </div>
         </div>
 
-        <!-- API Key -->
+        <!-- Server-side AI configuration -->
         <div class="card" style="border-color:#bfdbfe;background:#eff6ff">
           <div class="card-header">
-            <span class="card-title" style="color:var(--blue)">🤖 LLM Integration — Claude API Key</span>
-            <span class="card-badge" id="api-status-badge">Not configured</span>
+            <span class="card-title" style="color:var(--blue)">🤖 AI Incident Classification</span>
+            <span class="card-badge badge-blue">Server managed</span>
           </div>
           <p style="font-size:.82rem;color:var(--muted);line-height:1.7;margin-bottom:16px">
-            SAFARA uses <strong>Claude (claude-sonnet-4-20250514)</strong> to classify incident severity, detect harassment signals, and generate safe route advice. Enter your Anthropic API key to enable live AI classification. Without a key the app falls back to keyword matching.
+            SAFARA classifies incident reports through the Flask API. Any Anthropic credentials stay on the server; keyword-based classification is used when server-side AI is unavailable.
           </p>
-          <div class="api-key-row">
-            <input type="password" id="api-key-input" class="api-key-input" placeholder="sk-ant-api03-…"/>
-            <button class="api-save-btn" id="api-save-btn">Save Key</button>
-          </div>
-          <p class="api-key-hint">Key is stored only in your browser's localStorage. Never sent anywhere except directly to api.anthropic.com.</p>
         </div>
 
       </div>
@@ -108,10 +103,11 @@
   </div>
 </div>
 
-<script src="../js/utils.js"></script>
+<script src="js/api.js"></script>
+<script src="js/common.js"></script>
 <script>
   const user = requireAuth();
-  if (!user) throw new Error('not authed');
+  if (user) {
 
   document.getElementById('app-header').innerHTML = renderHeader(user);
   const nav = user.role === 'admin'
@@ -123,23 +119,7 @@
     const pages={map:'map.html',report:'report.html',ngo:'ngo.html',about:'about.html',incidents:'incidents.html',gov:'gov.html'};
     if(pages[id]) window.location.href=pages[id];
   });
-
-  // API key
-  const saved = localStorage.getItem('safara_apikey') || '';
-  document.getElementById('api-key-input').value = saved;
-  const badge = document.getElementById('api-status-badge');
-  badge.textContent = saved ? '● Active' : 'Not configured';
-  badge.className = `card-badge ${saved ? 'badge-green' : 'badge-amber'}`;
-
-  document.getElementById('api-save-btn').addEventListener('click', () => {
-    const key = document.getElementById('api-key-input').value.trim();
-    localStorage.setItem('safara_apikey', key);
-    badge.textContent = key ? '● Active' : 'Not configured';
-    badge.className = `card-badge ${key ? 'badge-green' : 'badge-amber'}`;
-    document.getElementById('api-save-btn').textContent = '✓ Saved';
-    setTimeout(() => document.getElementById('api-save-btn').textContent = 'Save Key', 2000);
-    Toast.show('API key saved', 'AI classification is now live.', '🤖');
-  });
+  }
 </script>
 </body>
 </html>

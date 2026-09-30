@@ -4,8 +4,8 @@
   <meta charset="UTF-8"/>
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
   <title>SAFARA — Sign In</title>
-  <link rel="stylesheet" href="../css/base.css"/>
-  <link rel="stylesheet" href="../css/auth.css"/>
+  <link rel="stylesheet" href="css/base.css"/>
+  <link rel="stylesheet" href="css/auth.css"/>
 </head>
 <body>
 
@@ -65,10 +65,15 @@
   </div>
 </div>
 
-<script src="../js/utils.js"></script>
+<script src="js/api.js"></script>
+<script src="js/common.js"></script>
 <script>
-  // Redirect if already logged in
-  if (Session.get()) window.location.href = 'map.html';
+  function redirectForRole(user) {
+    window.location.href = user.role === 'admin' ? 'gov.html' : user.role === 'ngo' ? 'incidents.html' : 'map.html';
+  }
+
+  const currentUser = API.getCurrentUser();
+  if (API.isLoggedIn()) redirectForRole(currentUser);
 
   const loginBtn = document.getElementById('login-btn');
   const emailEl  = document.getElementById('email');
@@ -83,24 +88,19 @@
   async function doLogin() {
     errEl.style.display = 'none';
     const email = emailEl.value.trim();
-    const pw    = pwEl.value;
-    if (!email || !pw) { showError('Please fill in both fields.'); return; }
+    const password = pwEl.value;
+    if (!email || !password) { showError('Please fill in both fields.'); return; }
 
     loginBtn.disabled = true;
     loginBtn.textContent = 'Signing in…';
-    await new Promise(r => setTimeout(r, 500));
-
-    const user = DB.findUser(email, pw);
-    if (!user) {
+    try {
+      const user = await API.login(email, password);
+      redirectForRole(user);
+    } catch (error) {
       loginBtn.disabled = false;
       loginBtn.textContent = 'Sign In →';
-      showError('Invalid email or password.');
-      return;
+      showError(error.message);
     }
-
-    Session.save(user);
-    const dest = user.role === 'admin' ? 'gov.html' : user.role === 'ngo' ? 'incidents.html' : 'map.html';
-    window.location.href = dest;
   }
 
   loginBtn.addEventListener('click', doLogin);

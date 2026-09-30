@@ -8,6 +8,7 @@ let routeLayers = [];
 let crimeDots = [];
 let pinMarkers = [];
 let currentRoutes = [];
+let incidentData = [];
 let selectedRouteIdx = 0;
 let showCrime = true;
 
@@ -59,13 +60,32 @@ function initMap() {
     }).addTo(map).bindPopup('<b>📍 You are here</b>').openPopup();
   });
 
-  drawCrimeDots();
+  refreshIncidents();
 }
 
 function getCrimes() {
-  return DB.getIncidents()
+  return incidentData
     .filter(i => i.status === 'confirmed')
-    .map(i => ({ lat: i.lat, lng: i.lng, severity: i.severity, type: i.type, location: i.location }));
+    .map(i => ({
+      lat: Number(i.latitude ?? i.lat),
+      lng: Number(i.longitude ?? i.lng),
+      severity: i.severity,
+      type: i.type,
+      location: i.location,
+      description: i.description || i.desc || '',
+    }))
+    .filter(i => Number.isFinite(i.lat) && Number.isFinite(i.lng));
+}
+
+async function refreshIncidents(showError = true) {
+  try {
+    incidentData = await API.getIncidents();
+    drawCrimeDots();
+    return true;
+  } catch (error) {
+    if (showError) Toast.show('Reports unavailable', error.message, '⚠️');
+    return false;
+  }
 }
 
 function drawCrimeDots() {
@@ -81,7 +101,7 @@ function drawCrimeDots() {
       radius: r, color: '#dc2626', fillColor: '#ef4444',
       fillOpacity: op, weight: 1.5,
     }).addTo(map);
-    m.bindPopup(`<b>🔴 ${c.type}</b><br/>${c.location}<br/><small>${c.severity} severity</small>`);
+    m.bindPopup(`<b>🔴 ${escapeHTML(c.type)}</b><br/>${escapeHTML(c.location)}<br/><small>${escapeHTML(c.severity)} severity</small>${c.description ? `<br/>${escapeHTML(c.description)}` : ''}`);
     crimeDots.push(m);
   });
 }
@@ -311,6 +331,7 @@ async function findRoute() {
     // ── Score each route against local crime data ─────────────────────────
     // Crime scoring only makes sense when the route is in/near Bengaluru.
     // For distant routes all scores will naturally be 10/10 (no crime dots nearby).
+    await refreshIncidents(false);
     const crimes = getCrimes();
     const scored = osrmRoutes.map(r => {
       const coords = r.geometry.coordinates.map(([lng, lat]) => [lat, lng]);

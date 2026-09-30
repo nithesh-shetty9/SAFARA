@@ -4,8 +4,8 @@
   <meta charset="UTF-8"/>
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
   <title>SAFARA — Create Account</title>
-  <link rel="stylesheet" href="../css/base.css"/>
-  <link rel="stylesheet" href="../css/auth.css"/>
+  <link rel="stylesheet" href="css/base.css"/>
+  <link rel="stylesheet" href="css/auth.css"/>
 </head>
 <body style="min-height:100vh;display:flex;align-items:center;justify-content:center;background:var(--bg);padding:24px 16px">
 
@@ -51,11 +51,12 @@
 
   <div style="text-align:center;margin-top:16px;font-size:.84rem;color:var(--muted)">
     Already have an account?
-    <a onclick="window.location.href='login.html'" style="color:var(--blue);font-weight:600;cursor:pointer">Sign in</a>
+    <a onclick="window.location.href='index.html'" style="color:var(--blue);font-weight:600;cursor:pointer">Sign in</a>
   </div>
 </div>
 
-<script src="../js/utils.js"></script>
+<script src="js/api.js"></script>
+<script src="js/common.js"></script>
 <script>
   const btn = document.getElementById('signup-btn');
   const errEl = document.getElementById('signup-error');
@@ -72,17 +73,19 @@
 
     if (!name)                        return showError('Name is required.');
     if (!/\S+@\S+\.\S+/.test(email)) return showError('Valid email required.');
-    if (DB.emailUsed(email))          return showError('Email already registered.');
     if (pw.length < 6)               return showError('Minimum 6 characters.');
     if (pw !== pw2)                   return showError('Passwords do not match.');
 
     btn.disabled = true;
     btn.textContent = 'Creating account…';
-    await new Promise(r => setTimeout(r, 600));
-
-    const user = DB.addUser({ name, email, pw, city, role: 'user' });
-    Session.save(user);
-    window.location.href = 'map.html';
+    try {
+      await API.signup({ name, email, password: pw, city });
+      window.location.href = 'map.html';
+    } catch (error) {
+      showError(error.message);
+      btn.disabled = false;
+      btn.textContent = 'Create Account →';
+    }
   }
 
   btn.addEventListener('click', doSignup);
