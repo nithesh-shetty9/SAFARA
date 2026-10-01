@@ -61,6 +61,14 @@ def listing():
     w=(' WHERE '+' AND '.join(clauses)) if clauses else ''
     return jsonify(items=query(f'SELECT * FROM incidents{w} ORDER BY created_at DESC LIMIT %s OFFSET %s',p+[limit,offset]))
 
+@bp.get('/public')
+@auth
+def public_listing():
+    try: limit=max(1,min(100,int(request.args.get('limit',100)))); offset=max(0,int(request.args.get('offset',0)))
+    except ValueError: return jsonify(error='limit and offset must be integers'),400
+    items=query("SELECT id,category,severity,latitude,longitude,address,created_at FROM incidents WHERE status='CONFIRMED' ORDER BY created_at DESC LIMIT %s OFFSET %s",(limit,offset))
+    return jsonify(items=items)
+
 @bp.get('/<int:id>')
 @auth
 def one(id):

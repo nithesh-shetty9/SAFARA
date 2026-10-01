@@ -1,6 +1,6 @@
 from flask import Blueprint,request,jsonify,g
 from app.db import query,execute
-from app.security import auth,officer
+from app.security import auth
 from app.utils import audit
 bp=Blueprint('sos',__name__)
 @bp.post('')
@@ -23,9 +23,17 @@ def listing():
  else:x=query('SELECT * FROM sos_alerts ORDER BY created_at DESC LIMIT 200')
  return jsonify(items=x)
 @bp.patch('/<int:id>')
-@officer
+@auth
 def update(id):
  d=request.get_json(silent=True);st=d.get('status') if isinstance(d,dict) else None
+ row=query('SELECT id,user_id,status FROM sos_alerts WHERE id=%s',(id,),True)
+ if not row:return jsonify(error='SOS alert not found'),404
+ role=g.current_user['role']
+ if role=='USER':
+  if row['user_id']!=g.current_user['id']:return jsonify(error='Forbidden'),403
+  if row['status']!='ACTIVE':return jsonify(error='Only an active SOS can be cancelled'),409
+  if st!='CANCELLED':return jsonify(error='Users can only cancel an active SOS'),403
+  execute('UPDATE sos_alerts SET status=%s,handled_by=%s,handled_at=NOW() WHERE id=%s',('CANCELLED',g.current_user['id'],id));audit(g.current_user['id'],'SOS_UPDATED','sos',id,{'status':'CANCELLED'});return jsonify(message='updated')
+ if role not in ('SUPER_ADMIN','DISTRICT_ADMIN','NGO_OFFICER','GOV_OFFICER'):return jsonify(error='Insufficient permissions'),403
  if st not in ['ACTIVE','ACKNOWLEDGED','RESOLVED','CANCELLED']:return jsonify(error='Invalid status'),400
- if not query('SELECT id FROM sos_alerts WHERE id=%s',(id,),True):return jsonify(error='SOS alert not found'),404
  execute('UPDATE sos_alerts SET status=%s,handled_by=%s,handled_at=NOW() WHERE id=%s',(st,g.current_user['id'],id));audit(g.current_user['id'],'SOS_UPDATED','sos',id,{'status':st});return jsonify(message='updated')
