@@ -174,11 +174,12 @@ export function OfficerMap() {
 export function OfficerAlerts() {
   const { data, error, loading, refresh } = useRequest(() => API.sos(), [], 5000)
   const [message, setMessage] = useState('')
+  const officerSosStatuses = ['ACTIVE', 'ACKNOWLEDGED', 'RESOLVED']
   async function update(item, status) {
     try { await API.updateSOS(item.id, status); await refresh() }
     catch (updateError) { setMessage(updateError.message) }
   }
-  return <section className="command-page"><CommandHeading eyebrow="Response operations" title="SOS requests" subtitle="Review the recorded location and update the operational status." action={<button className="command-outline-button" onClick={refresh}><RefreshCw size={15} /> Refresh</button>} />{(error || message) && <div className="inline-message" role="alert">{error || message}</div>}<div className="command-panel">{loading ? <div className="panel-empty">Loading SOS requests…</div> : data?.length ? data.map(item => <article className="sos-command-item" key={item.id}><div><strong>SOS #{item.id}</strong><span>{item.address || `${item.latitude}, ${item.longitude}`}</span><small>{date(item.created_at)}</small></div><select value={item.status} aria-label={`Update SOS ${item.id}`} onChange={event => update(item, event.target.value)}>{['ACTIVE', 'ACKNOWLEDGED', 'RESOLVED', 'CANCELLED'].map(status => <option key={status}>{status}</option>)}</select></article>) : <div className="panel-empty">No SOS requests.</div>}</div><p className="command-footnote">Creating an SOS record does not notify emergency services or personal contacts.</p></section>
+  return <section className="command-page"><CommandHeading eyebrow="Response operations" title="SOS requests" subtitle="Review the recorded location and update the operational status." action={<button className="command-outline-button" onClick={refresh}><RefreshCw size={15} /> Refresh</button>} />{(error || message) && <div className="inline-message" role="alert">{error || message}</div>}<div className="command-panel">{loading ? <div className="panel-empty">Loading SOS requests…</div> : data?.length ? data.map(item => <article className="sos-command-item" key={item.id}><div><strong>SOS #{item.id}</strong><span>{item.address || `${item.latitude}, ${item.longitude}`}</span><small>{date(item.created_at)}</small></div><select value={item.status} aria-label={`Update SOS ${item.id}`} onChange={event => update(item, event.target.value)}>{officerSosStatuses.map(status => <option key={status}>{status}</option>)}</select></article>) : <div className="panel-empty">No SOS requests.</div>}</div><p className="command-footnote">Creating an SOS record does not notify emergency services or personal contacts.</p></section>
 }
 
 export function OfficerAssignments() {

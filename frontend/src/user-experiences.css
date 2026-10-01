@@ -18,7 +18,7 @@
 .section-heading { display: flex; align-items: center; justify-content: space-between; gap: 12px; margin-bottom: 14px; }
 .section-heading h2 { color: #203f42; font-size: .98rem; font-weight: 700; }
 .section-heading > span { color: #6c7e7e; font-size: .78rem; }
-.text-link, .contacts-profile-link { display: inline-flex; align-items: center; gap: 6px; color: #176e66; font-size: .82rem; font-weight: 650; }
+.text-link { display: inline-flex; align-items: center; gap: 6px; color: #176e66; font-size: .82rem; font-weight: 650; }
 .home-map-frame { position: relative; min-height: 310px; height: min(42vh, 430px); overflow: hidden; border: 1px solid #d7e0de; border-radius: 8px; background: #edf3ef; }
 .home-map, .explore-map { position: absolute; inset: 0; min-height: 0; }
 .map-recenter { position: absolute; top: 14px; right: 14px; display: grid; place-items: center; width: 40px; height: 40px; border: 1px solid #ccd9d7; border-radius: 6px; background: #fff; color: #1c6d67; box-shadow: 0 2px 7px #182c2a1c; }
@@ -51,7 +51,7 @@
 .explore-heading p { font-size: .82rem; }
 .explore-map-wrap { position: sticky; top: 0; min-height: calc(100vh - var(--header)); height: calc(100vh - var(--header)); background: #e9efeb; }
 .place-search { position: relative; margin: 16px 0; }
-.place-search > label, .contact-editor label, .report-form label { display: block; margin-bottom: 7px; color: #526669; font-size: .73rem; font-weight: 700; }
+.place-search > label, .report-form label { display: block; margin-bottom: 7px; color: #526669; font-size: .73rem; font-weight: 700; }
 .place-search-field { display: flex; align-items: center; gap: 9px; min-height: 44px; padding: 0 11px; border: 1px solid #ccd9d7; border-radius: 6px; background: #fff; color: #789091; }
 .place-search-field:focus-within { border-color: #3c9185; box-shadow: 0 0 0 2px #3c91851c; }
 .place-search-field input { width: 100%; min-width: 0; border: 0; outline: 0; background: transparent; color: #213b3e; font-size: .84rem; }
@@ -68,14 +68,19 @@
 .route-options { margin-top: 25px; }
 .route-options .section-heading { margin-bottom: 9px; }
 .route-options .section-heading span { font-size: .72rem; }
+.route-mode-toggle { display: grid; grid-template-columns: 1fr 1fr; gap: 3px; margin: 10px 0 14px; padding: 3px; border: 1px solid #d6e1de; border-radius: 6px; background: #f2f6f4; }
+.route-mode-toggle button { min-height: 34px; border: 0; border-radius: 4px; background: transparent; color: #627574; font-size: .76rem; font-weight: 700; }
+.route-mode-toggle button.active { background: #fff; color: #176e66; box-shadow: 0 1px 3px #203f421c; }
 .route-option { display: block; width: 100%; margin: 8px 0; padding: 12px; border: 1px solid #d7e1de; border-radius: 6px; background: #fff; color: #263f42; text-align: left; }
 .route-option.selected { border-color: #3b8d82; box-shadow: inset 3px 0 #278276; background: #f5faf8; }
 .route-option-top, .route-option-sub { display: flex; justify-content: space-between; gap: 12px; }
 .route-option-top strong { font-size: .81rem; }
 .route-option-top span { font-size: .78rem; font-weight: 700; }
 .route-option-sub { margin-top: 6px; color: #718184; font-size: .69rem; }
+.route-safety-track { display: block; height: 5px; margin-top: 10px; overflow: hidden; border-radius: 3px; background: #e8eeeb; }
+.route-safety-track > span { display: block; height: 100%; border-radius: inherit; transition: width .2s ease; }
 .route-caveat { display: flex; gap: 7px; margin: 13px 0; color: #7b6a4d; font-size: .7rem; }
-.route-options > .button-primary, .explore-panel > .button-primary, .report-form > .button-primary, .contact-editor > .button-primary { width: 100%; }
+.route-options > .button-primary, .explore-panel > .button-primary, .report-form > .button-primary { width: 100%; }
 .inline-message { margin: 12px 0; padding: 10px 12px; border-left: 3px solid #bf762c; background: #fff8eb; color: #71532d; font-size: .78rem; }
 .config-note { display: flex; flex-direction: column; gap: 4px; margin-top: 18px; padding: 12px; border: 1px solid #d3e1dc; border-radius: 6px; background: #f3f8f5; color: #3a5a56; }
 .config-note strong { font-size: .76rem; }
@@ -98,7 +103,7 @@
 .exposure-summary small { color: #788785; font-size: .66rem; }
 .navigation-summary > .button-danger { width: 100%; margin-top: 7px; }
 
-/* Reports, SOS, personal contacts, and profile */
+/* Reports, SOS, official emergency services, and profile */
 .form-page, .sos-page, .contacts-page, .user-list-page, .profile-page { max-width: 1000px; padding: 30px clamp(18px, 4vw, 56px) 48px; }
 .form-page > .back-link { margin-bottom: 20px; }
 .report-form { max-width: 680px; margin-top: 27px; padding: 20px; border: 1px solid #dce5e2; border-radius: 7px; background: #fff; }
@@ -159,27 +164,24 @@
 .sos-history-row { display: flex; align-items: center; gap: 12px; padding: 10px 2px; border-bottom: 1px solid #e1e8e5; color: #657879; font-size: .76rem; }
 .sos-history-row strong { color: #365e59; font-size: .72rem; }
 .sos-history-row small { margin-left: auto; color: #879391; font-size: .68rem; }
-.device-only { display: flex; align-items: center; gap: 11px; max-width: 620px; margin: 22px 0; padding: 13px; border: 1px solid #d6e3dc; border-radius: 6px; background: #f3f8f4; color: #4b7b65; }
-.device-only span { display: flex; flex-direction: column; gap: 3px; }
-.device-only strong { color: #39664f; font-size: .78rem; }
-.device-only small { color: #73847a; font-size: .7rem; }
-.contacts-layout { display: grid; grid-template-columns: minmax(0, 1.5fr) minmax(240px, .8fr); gap: 28px; align-items: start; margin-top: 26px; }
-.contact-list, .contact-editor { min-width: 0; }
-.personal-contact { display: flex; align-items: center; gap: 11px; padding: 12px 2px; border-bottom: 1px solid #e0e7e4; }
-.contact-avatar, .profile-avatar { display: grid; flex: none; width: 38px; height: 38px; place-items: center; border-radius: 50%; background: #e5efeb; color: #36746a; font-size: .88rem; font-weight: 750; }
-.personal-contact-info { display: flex; flex: 1; flex-direction: column; gap: 3px; min-width: 0; }
-.personal-contact-info strong { color: #304a4b; font-size: .81rem; }
-.personal-contact-info span { overflow: hidden; color: #768585; font-size: .7rem; text-overflow: ellipsis; white-space: nowrap; }
 .icon-action { display: grid; flex: none; width: 33px; height: 33px; place-items: center; border: 1px solid #dfe7e4; border-radius: 5px; background: #fff; color: #5e7774; }
 .icon-action:hover { border-color: #93b4ac; color: #176e66; }
-.icon-action.danger:hover { border-color: #e6b5b1; color: #b63834; }
-.contact-editor { display: flex; flex-direction: column; gap: 13px; padding: 17px; border: 1px solid #dce5e2; border-radius: 7px; background: #fff; }
-.contact-editor .section-heading { margin-bottom: 0; }
-.contact-editor label { margin: 0; }
-.contact-editor input { width: 100%; height: 39px; margin-top: 6px; padding: 0 10px; border: 1px solid #cddad7; border-radius: 5px; outline: 0; color: #294345; font-size: .8rem; }
-.contact-editor input:focus { border-color: #478f83; }
-.contacts-profile-link { margin-top: 20px; }
 .sos-contact-link { margin-top: 4px; }
+.official-contact-grid { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 14px; margin-top: 26px; }
+.official-contact-card { display: flex; min-width: 0; min-height: 205px; flex-direction: column; padding: 18px; border: 1px solid #dce5e2; border-radius: 7px; background: #fff; }
+.official-contact-heading { display: flex; align-items: center; gap: 11px; }
+.official-contact-icon { display: grid; width: 40px; height: 40px; flex: none; place-items: center; border-radius: 6px; background: #edf4f1; color: #176e66; }
+.official-contact-card h2 { color: #294648; font-size: .92rem; font-weight: 700; }
+.official-contact-card > p { flex: 1; margin: 13px 0 18px; color: #718184; font-size: .78rem; line-height: 1.5; }
+.official-contact-action { display: flex; align-items: center; justify-content: space-between; gap: 12px; padding-top: 13px; border-top: 1px solid #e8eeeb; }
+.official-contact-action strong { color: #183e41; font-size: 1.35rem; font-variant-numeric: tabular-nums; }
+.official-contact-action .button-primary { min-width: 104px; min-height: 44px; }
+.official-contact-note { margin-top: 18px; color: #718184; font-size: .76rem; }
+.tone-medical .official-contact-icon { background: #eaf4f8; color: #28789a; }
+.tone-fire .official-contact-icon { background: #fff0e9; color: #bd5632; }
+.tone-women .official-contact-icon { background: #f9eef0; color: #a14e62; }
+.tone-response .official-contact-icon { background: #f2f2e8; color: #75763b; }
+.profile-avatar { display: grid; flex: none; width: 38px; height: 38px; place-items: center; border-radius: 50%; background: #e5efeb; color: #36746a; font-size: .88rem; font-weight: 750; }
 .profile-details { display: flex; align-items: center; gap: 15px; max-width: 620px; margin-top: 24px; padding: 18px 0; border-top: 1px solid #dfe7e4; border-bottom: 1px solid #dfe7e4; }
 .profile-avatar { width: 52px; height: 52px; font-size: 1.05rem; }
 .profile-details > div:last-child { display: flex; flex-direction: column; gap: 3px; }
@@ -197,7 +199,7 @@
   .explore-panel { overflow: visible; padding: 21px 17px 20px; border-right: 0; }
   .explore-map-wrap { position: relative; top: auto; min-height: 46vh; height: 46vh; flex: none; }
   .form-page, .sos-page, .contacts-page, .user-list-page, .profile-page { padding: 22px 17px 38px; }
-  .contacts-layout { grid-template-columns: 1fr; gap: 24px; }
+  .official-contact-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 12px; }
   .sos-help-grid { grid-template-columns: 1fr; gap: 2px; }
   .sos-help-grid > div { padding: 11px 2px; }
   .report-form { padding: 15px; }
@@ -211,9 +213,11 @@
   .report-row { gap: 8px; }
   .report-row .status-badge { font-size: .58rem; }
   .report-row-main p { max-width: 60vw; }
-  .personal-contact { gap: 7px; }
   .icon-action { width: 30px; height: 30px; }
   .sos-control { padding: 23px 14px; }
   .sos-history-row { flex-wrap: wrap; }
   .sos-history-row small { width: 100%; margin-left: 0; }
+  .official-contact-grid { grid-template-columns: 1fr; }
+  .official-contact-card { min-height: 185px; }
+  .official-contact-action .button-primary { min-width: 112px; }
 }

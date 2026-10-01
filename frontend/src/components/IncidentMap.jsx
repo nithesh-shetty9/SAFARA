@@ -22,7 +22,7 @@ export default function IncidentMap() {
   useEffect(() => {
     if (!element.current || !hasMapboxToken()) return undefined
     mapboxgl.accessToken = import.meta.env.VITE_MAPBOX_ACCESS_TOKEN
-    const map = new mapboxgl.Map({ container: element.current, style: 'mapbox://styles/mapbox/streets-v12', center: [-74.843, 12.870], zoom: 11 })
+    const map = new mapboxgl.Map({ container: element.current, style: 'mapbox://styles/mapbox/streets-v12', center: [74.843, 12.870], zoom: 11 })
     mapRef.current = map
     map.on('load', () => setReady(true))
     map.on('error', event => setMessage(event.error?.message || 'Map tiles could not be loaded.'))

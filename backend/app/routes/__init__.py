@@ -7,5 +7,6 @@ from app.routes.contacts import bp as c
 from app.routes.analytics import bp as an
 from app.routes.system import bp as sy
 from app.routes.health import bp as h
+from app.routes.locations import bp as loc
 def register_routes(app):
- for b,p in [(a,'/api/v1/auth'),(i,'/api/v1/incidents'),(ad,'/api/v1/admin'),(n,'/api/v1/ngo'),(s,'/api/v1/sos'),(c,'/api/v1/contacts'),(an,'/api/v1/analytics'),(sy,'/api/v1/system'),(h,'/api/v1')]:app.register_blueprint(b,url_prefix=p)
+ for b,p in [(a,'/api/v1/auth'),(i,'/api/v1/incidents'),(ad,'/api/v1/admin'),(n,'/api/v1/ngo'),(s,'/api/v1/sos'),(c,'/api/v1/contacts'),(an,'/api/v1/analytics'),(sy,'/api/v1/system'),(h,'/api/v1'),(loc,'/api/v1/locations')]:app.register_blueprint(b,url_prefix=p)

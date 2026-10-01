@@ -68,6 +68,9 @@ export const API = {
   updateSOS: (id, status) => request(`/sos/${id}`, { method:'PATCH', body:JSON.stringify({ status }) }),
   contacts: () => request('/contacts').then(r => r.items || []),
 
+  saveLocation: payload => request('/locations/current', { method:'PUT', body:JSON.stringify(payload) }),
+  currentLocation: () => request('/locations/current').then(r => r.location || null),
+
   analyticsDashboard: () => request('/analytics/dashboard'),
   analyticsSeverity: () => request('/analytics/severity').then(r => r.items || []),
   analyticsTypes: () => request('/analytics/types').then(r => r.items || []),

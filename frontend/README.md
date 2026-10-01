@@ -26,7 +26,8 @@ The backend JWT is authoritative. React guards provide navigation only; Flask en
 
 - User maps use Mapbox GL JS; admin/officer district maps use Leaflet.
 - User map markers come from the backend's confirmed-only public incident endpoint. Popups show category, severity, location, and report time, never reporter identity.
-- Route alternatives use Mapbox Directions and are scored against confirmed incident proximity/severity. The indicator is based on incomplete reports and is not a personal-safety guarantee.
+- Route alternatives use Mapbox Directions and are scored against confirmed incident proximity, severity, and a centralized 30-day linear recency window. The window and score weights are exported as one policy object for product review. The indicator is based on incomplete reports and is not a personal-safety guarantee.
+- Source/destination points within 25 m are treated as the same place; navigation reports Arrived within the same configured tolerance.
 - Live GPS starts only after the user starts navigation. Stop Navigation, leaving the route, or unmounting the screen clears the geolocation watch.
 - Incident reports collect a description and location; the backend performs classification. Category and incident time are not user-editable in this flow.
 - SOS requires a three-second hold and records a location with the backend. It does not send SMS, notify personal contacts, or contact emergency services.

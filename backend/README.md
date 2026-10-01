@@ -15,6 +15,7 @@ Flask + MySQL REST API for SAFARA. The backend uses **Gemini only** for incident
 
 ```sql
 SOURCE sql/schema.sql;
+SOURCE sql/migration_locations.sql;
 ```
 
 2. Create `.env` from `.env.example` and fill in your own values:
@@ -70,7 +71,27 @@ Base URL:
 - `/admin` — administration, alerts, protocols, audit logs
 - `/analytics` — dashboard, severity, types, trend, hotspots
 - `/system` — health details and controlled system settings
+- `/locations` — save and retrieve the signed-in user's location; officer live-location feed
 - `/health` — public API/database health
+
+### Location migration
+
+Before applying `sql/migration_locations.sql`, verify the target is an approved disposable or non-production database and that `users.id` is `BIGINT UNSIGNED`. The location tables reference `users(id)` and cascade when a user is deleted. Do not apply this migration to a production or unverified database.
+
+From a MySQL client connected to the approved database:
+
+```sql
+SOURCE sql/migration_locations.sql;
+```
+
+The migration creates `user_locations` (one current row per user) and `location_trail` (navigation breadcrumbs). Both are InnoDB tables with user foreign keys; no migration was applied during the current SAFARA QA run because the connected `safara` database contains existing application data and is not confirmed disposable.
+
+### SOS access policy
+
+- Regular users can list only their own SOS records and can cancel only their own active SOS.
+- NGO and government officers can list only active/acknowledged SOS records and may acknowledge or resolve them. Their response projection excludes user IDs and message/internal handling fields.
+- District and super administrators can list all SOS statuses and use the admin status workflow; the response projection still excludes unnecessary identity/contact fields.
+- SOS records are persisted only. Creating an SOS does not notify contacts or emergency services.
 
 ## Security behavior
 
