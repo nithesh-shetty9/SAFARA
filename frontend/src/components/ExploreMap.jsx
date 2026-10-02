@@ -4,6 +4,7 @@ import { ArrowLeft, ArrowUpRight, LocateFixed, MapPin, Navigation, Search, Shiel
 import { API } from '../api/client'
 import { coordinatesDistanceMeters, distanceToRouteMeters, getAllRoutes, hasArrivedAtDestination, hasMapboxToken, isSamePlace, remainingRouteMeters, routeSafety, searchPlaces } from '../utils/mapbox'
 import { useAutoRefresh } from '../hooks/useAutoRefresh'
+import { getAccuratePosition } from '../utils/geo'
 
 const START = [74.843, 12.870]
 const formatDistance = meters => meters >= 1000 ? `${(meters / 1000).toFixed(1)} km` : `${Math.round(meters)} m`
@@ -225,7 +226,7 @@ export default function ExploreMap() {
   function useCurrentLocation() {
     if (!navigator.geolocation) { setMessage('This browser does not provide location access.'); return }
     setMessage('')
-    navigator.geolocation.getCurrentPosition(position => {
+    getAccuratePosition().then(position => {
       const coordinates = persistPosition(position)
       const currentSource = { name: 'Current location', label: 'Current location', coordinates }
       setSource(currentSource)
@@ -235,7 +236,7 @@ export default function ExploreMap() {
         locationMarkerRef.current = new mapboxgl.Marker({ color: '#1f68c5' }).setLngLat(coordinates).setPopup(new mapboxgl.Popup().setText('Current location')).addTo(mapRef.current)
         mapRef.current.flyTo({ center: coordinates, zoom: 14 })
       }
-    }, () => setMessage('Location permission was denied or your position is unavailable.'), { enableHighAccuracy: true, timeout: 12000 })
+    }).catch(() => setMessage('Location permission was denied or your position is unavailable.'))
   }
 
   useEffect(() => { useCurrentLocation() }, [])
@@ -285,7 +286,7 @@ export default function ExploreMap() {
     if (!selectedRoute) return
     if (!navigator.geolocation) { setMessage('Live navigation requires browser location support.'); return }
     setMessage('')
-    navigator.geolocation.getCurrentPosition(position => {
+    getAccuratePosition().then(position => {
       const firstPosition = persistPosition(position, true)
       lastLocationSaveRef.current = Date.now()
       navigationActiveRef.current = true
@@ -297,6 +298,7 @@ export default function ExploreMap() {
       mapRef.current?.easeTo({ center: firstPosition, zoom: 16, pitch: 48, duration: 700 })
       watchRef.current = navigator.geolocation.watchPosition(nextPosition => {
         if (!navigationActiveRef.current) return
+        if (nextPosition.coords.accuracy > 100) return
         const coordinates = [nextPosition.coords.longitude, nextPosition.coords.latitude]
         latestCoordinatesRef.current = coordinates
         latestPositionRef.current = nextPosition
@@ -321,7 +323,7 @@ export default function ExploreMap() {
           if (nextDestination && sourceRef.current) compareRoutes(sourceRef.current, nextDestination, coordinates).finally(() => { reroutingRef.current = false })
         }
       }, () => { setMessage('Live GPS updates stopped. Check location permission and signal.'); stopNavigation() }, { enableHighAccuracy: true, maximumAge: 2000, timeout: 15000 })
-    }, () => setMessage('Allow location access to start live navigation.'), { enableHighAccuracy: true, timeout: 12000 })
+    }).catch(() => setMessage('Allow location access to start live navigation.'))
   }
 
   useEffect(() => () => {

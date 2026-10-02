@@ -40,6 +40,8 @@ def save_current():
         speed = _number(data.get('speed'), 'speed', 0)
     except ValueError:
         return jsonify(error='Valid coordinates and optional location measurements are required'), 400
+    if accuracy is not None and accuracy > 1000:
+        return jsonify(error='Location reading is too inaccurate to store (accuracy over 1000 m)'), 422
     navigating = data.get('navigating', False)
     if not isinstance(navigating, bool):
         return jsonify(error='navigating must be a boolean'), 400

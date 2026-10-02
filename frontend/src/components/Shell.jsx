@@ -4,6 +4,7 @@ import { API } from '../api/client'
 import { isAdmin, isOfficer } from '../utils/helpers'
 import { useToast } from './Toast'
 import { Link, useLocation, useNavigate } from 'react-router-dom'
+import { getAccuratePosition } from '../utils/geo'
 
 const pages = { map:'/map', report:'/report', ngo:'/ngo', about:'/about', incidents:'/incidents', gov:'/gov' }
 
@@ -13,11 +14,11 @@ export function Header() {
   async function sos() {
     setBusy(true)
     if (!navigator.geolocation) { toast.show('Location unavailable','Your browser does not provide GPS.','⚠️'); setBusy(false); return }
-    navigator.geolocation.getCurrentPosition(async p => {
+    getAccuratePosition().then(async p => {
       try { const r=await API.createSOS({latitude:p.coords.latitude,longitude:p.coords.longitude,message:'SOS alert from SAFARA'}); toast.show('SOS sent','Your emergency alert is active.','🚨'); navigate('/ngo') }
       catch(e){toast.show('SOS failed',e.message,'⚠️')}
       finally{setBusy(false)}
-    },()=>{toast.show('Location unavailable','Allow location access to send SOS.','⚠️');setBusy(false)},{timeout:8000})
+    }).catch(()=>{toast.show('Location unavailable','Allow location access to send SOS.','⚠️');setBusy(false)})
   }
   const roleLabel = isAdmin(user?.role) ? 'Government' : isOfficer(user?.role) ? 'Officer' : ''
   return <header className="header">
