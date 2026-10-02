@@ -3,6 +3,7 @@ import { Link } from 'react-router-dom'
 import { ArrowLeft, Check, MapPin, Search } from 'lucide-react'
 import { API } from '../api/client'
 import { searchPlaces } from '../utils/mapbox'
+import { getAccuratePosition } from '../utils/geo'
 
 export default function ReportForm() {
   const [description, setDescription] = useState('')
@@ -26,10 +27,10 @@ export default function ReportForm() {
 
   function useLocation() {
     setMessage('')
-    navigator.geolocation?.getCurrentPosition(position => {
+    getAccuratePosition().then(position => {
       setPlace({ name: 'Current location', label: 'Device GPS', coordinates: [position.coords.longitude, position.coords.latitude] })
       setQuery('')
-    }, () => setMessage('Allow location access or search for the incident location.'), { enableHighAccuracy: true, timeout: 12000 })
+    }).catch(() => setMessage('Allow location access or search for the incident location.'))
   }
 
   async function submit(event) {

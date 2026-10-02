@@ -4,6 +4,7 @@ import { LocateFixed, MapPin } from 'lucide-react'
 import { API } from '../api/client'
 import { hasMapboxToken } from '../utils/mapbox'
 import { useAutoRefresh } from '../hooks/useAutoRefresh'
+import { getAccuratePosition } from '../utils/geo'
 
 export default function IncidentMap() {
   const element = useRef(null)
@@ -54,12 +55,12 @@ export default function IncidentMap() {
   function locate() {
     if (!navigator.geolocation) { setMessage('Location is unavailable in this browser.'); return }
     setMessage('')
-    navigator.geolocation.getCurrentPosition(position => {
+    getAccuratePosition().then(position => {
       const center = [position.coords.longitude, position.coords.latitude]
       mapRef.current?.flyTo({ center, zoom: 14 })
       const marker = new mapboxgl.Marker({ color: '#1f68c5' }).setLngLat(center).setPopup(new mapboxgl.Popup().setText('Current location')).addTo(mapRef.current)
       window.setTimeout(() => marker.remove(), 10000)
-    }, () => setMessage('Allow location access to center the map on your current location.'), { enableHighAccuracy: true, timeout: 12000 })
+    }).catch(() => setMessage('Allow location access to center the map on your current location.'))
   }
 
   return <div className="home-map-frame">

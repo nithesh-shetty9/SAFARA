@@ -3,6 +3,7 @@ import { Link } from 'react-router-dom'
 import { AlertTriangle, MapPin, Phone, ShieldCheck, Siren } from 'lucide-react'
 import { API } from '../api/client'
 import { useAutoRefresh } from '../hooks/useAutoRefresh'
+import { getAccuratePosition } from '../utils/geo'
 
 export default function SosPanel() {
   const [alerts, setAlerts] = useState([])
@@ -33,14 +34,14 @@ export default function SosPanel() {
       setHolding(false)
       setBusy(true)
       if (!navigator.geolocation) { setMessage('This browser does not provide location access.'); setBusy(false); return }
-      navigator.geolocation.getCurrentPosition(async position => {
+      getAccuratePosition().then(async position => {
         try {
           const result = await API.createSOS({ latitude: position.coords.latitude, longitude: position.coords.longitude, message: 'SOS alert from SAFARA' })
           setAlerts(items => [{ id: result.id, status: result.status, latitude: position.coords.latitude, longitude: position.coords.longitude, created_at: new Date().toISOString() }, ...items])
           setMessage('SOS recorded. SAFARA has not notified your contacts or emergency services.')
         } catch (error) { setMessage(error.message) }
         finally { setBusy(false) }
-      }, () => { setMessage('Allow location access to record an SOS.'); setBusy(false) }, { enableHighAccuracy: true, timeout: 12000 })
+      }).catch(() => { setMessage('Allow location access to record an SOS.'); setBusy(false) })
     }, 3000)
   }
 
